@@ -1,0 +1,60 @@
+#pragma once
+
+#include <pthread.h>
+
+//线程类
+
+//保护共享变量
+class guardMutex {
+private:
+    pthread_mutex_t m_mutex;
+
+public:
+    guardMutex() = delete;
+    explicit guardMutex(pthread_mutex_t mutex) {
+        m_mutex = mutex;
+        pthread_mutex_lock(&m_mutex);
+    }
+    ~guardMutex() {
+        pthread_mutex_unlock(&m_mutex);
+    }
+};
+
+class thread {
+private:
+    pthread_t m_tid;
+    char pthreadName[32];
+    void *(*m_methodRouter)(void *);
+
+public:
+    thread(const char *name) {
+        if (name == nullptr) {
+            struct timeval time;
+            gettimeofday(&time, nullptr); /* 获取时间，理论到us */
+            snprintf(pthreadName, sizeof(pthreadName), "name_%ld", (time.tv_sec*1000 + time.tv_usec/1000));
+            printf("%s\n", pthreadName);
+        }
+        else {
+            memcpy(pthreadName, name, sizeof(pthreadName) > strlen(name) ? strlen(name) : sizeof(pthreadName));
+        }
+    }
+
+    void setRouter(void *(*methodRouter)(void *), void *args = nullptr) {
+        m_methodRouter = methodRouter;
+    }
+
+    int run() {
+        return pthread_create(&m_tid, nullptr, m_methodRouter, nullptr);
+    }
+    
+    int getThreadId() {
+        return m_tid;   
+    }
+    void detach() {
+        pthread_detach(m_tid);
+    }
+
+    void join() {
+        pthread_join(m_tid, nullptr);   
+    }
+};
