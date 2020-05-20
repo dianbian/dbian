@@ -1,5 +1,5 @@
 #pragma once
-#include "unp.h"
+#include "comm/unp.h"
 #include "socket.h"
 #include "signal.h"
 #include "communicate.h"
@@ -39,6 +39,7 @@ ser_main(int argc, char** argv)
         Close(connfd);
         sleep(1);
     }
+    return 0;
 }
 
 int
@@ -81,15 +82,13 @@ ser_main_fork(int argc, char** argv)
         }
         Close(connfd);  //fd is duplicated, 
     }
+    return 0;
 }
 
 int
 ser_main_udp(int argc, char** argv)
 {
     int sockfd;
-    pid_t childpid;
-    socklen_t clilen;
-    char buff[MAXLINE];
     struct sockaddr_in servaddr, cliaddr;
 
     sockfd = Socket(AF_INET, SOCK_DGRAM, 0);
@@ -102,6 +101,7 @@ ser_main_udp(int argc, char** argv)
     Bind(sockfd, (SA *)&servaddr, sizeof(servaddr));
 
     dg_echo(sockfd, (SA *)&cliaddr, sizeof(cliaddr));
+    return 0;
 }
 
 int
@@ -176,4 +176,5 @@ ser_main_poll(int argc, char** argv)
             }
         }
     }
+    return 0;
 }

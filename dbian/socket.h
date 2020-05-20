@@ -1,5 +1,5 @@
 #pragma once
-#include "unp.h"
+#include "comm/unp.h"
 
 int
 Socket(int family, int type, int protocol)
@@ -32,6 +32,7 @@ Listen(int sockFd, int backLog)
     if (ret < 0) {
         return -1;
     }
+    return 0;
 }
 
 int 
@@ -67,7 +68,7 @@ Close(int connFd)
 int
 Writen(int connFd, const void *buff, size_t n)
 {
-    int ret = write(connFd, buff, n);
+    size_t ret = write(connFd, buff, n);
     if (ret != n) {
         return -1;
     }
@@ -87,7 +88,7 @@ Inet_pton(int family, const char *ipPtr, void *addrPtr)
 int
 Read(int connFd, void *buff, size_t n)
 {
-    int ret = read(connFd, buff, n);
+    size_t ret = read(connFd, buff, n);
     if (ret != n) {
         return -1;
     }

@@ -1,4 +1,4 @@
-#include "unp.h"
+#include "comm/unp.h"
 #include "socket.h"
 
 //ssize_t in 32bit like int, in 64bit lit long int
@@ -7,7 +7,7 @@ readn(int sockFd, void *vptr, size_t n)
 {
     size_t nLeft = n;
     int nRead = 0;
-    char *ptr = vptr;
+    char *ptr = (char *)vptr;
     while (nLeft > 0) {
         if ( (nRead = read(sockFd, ptr, nLeft)) < 0) {
             if (errno == EINTR)
@@ -27,7 +27,7 @@ writen(int sockFd, const void *vptr, size_t n)
 {
     size_t nLeft = n;
     int nWriten;
-    const char* ptr = vptr;
+    const char* ptr = (const char*)vptr;
     while (nLeft > 0) {
         if ( (nWriten = write(sockFd, ptr, nLeft)) <= 0) {
             if (nWriten < 0 && errno == EINTR)
@@ -38,13 +38,14 @@ writen(int sockFd, const void *vptr, size_t n)
         nLeft -= nWriten;
         ptr += nWriten;
     }
+    return n;
 }
 
 ssize_t
 readline(int sockFd, void *vptr, size_t maxLen)
 {
-    ssize_t n, rc;
-    char c, *ptr = vptr;
+    size_t n, rc;
+    char c, *ptr = (char *)vptr;
     for (n = 1; n < maxLen; n++) {
     again:
         if ( (rc = read(sockFd, &c, 1)) == 1 ) {

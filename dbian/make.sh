@@ -14,4 +14,3 @@ fi
 if [ -f './Makefile' ]; then
     rm Makefile
 fi
-#cmake .
