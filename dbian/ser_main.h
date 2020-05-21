@@ -230,14 +230,14 @@ void writeFunc()
     log *t = new log();
     t->initialize("bian.log");
     sleep(2);
-    for (int i = 0; i < 1000; ++i) {
+    while (1) {
         char buff[128];
         struct timeval time;
         gettimeofday(&time, nullptr);
-        snprintf(buff, sizeof(buff), "name_%ld________%d_%lu\n", (time.tv_sec*1000 + time.tv_usec/1000), i, (unsigned long)pthread_self());
+        snprintf(buff, sizeof(buff), "name_%ld________%d_%lu\n", (time.tv_sec*1000 + time.tv_usec/1000), 1, (unsigned long)pthread_self());
         t->writelog(buff);
         printf("the thread desc the number:%s, pthreadid:%lu\n", buff, (unsigned long)pthread_self());
-        sleep(1); 
+        //sleep(1); 
     }
 
     /* int m_fd = ::open("bian", O_CREAT|O_RDWR, 0644);

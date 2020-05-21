@@ -30,3 +30,8 @@
 
 typedef void Sigfunc(int);
 
+#define LOG_DEBUG(format, ...)     LogDebug(__FILE__, __LINE__, x, ##__VA_ARGS__);
+#define LOG_ERROR(format, ...)       LogError(__FILE__, __LINE__, x, ##__VA_ARGS__); 
+void LogDebug(const char* pFile, int iLine, LPCTSTR pFormat, ...);
+void LogError(const char* pFile, int iLine, LPCTSTR pFormat, ...);
+
