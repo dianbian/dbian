@@ -2,16 +2,6 @@
 #include "comm/linkedList.h"
 #include "comm/thread.h"
 
-void * thread_work(void*)
-{
-    for ( int i = 0; i < 20; i++)
-    {
-        printf("the thread output the number:%d\n", i);
-        sleep(1);
-    }
-    return nullptr;
-}
-
 int main(int argc, char** argv)
 {
     //ser_main(argc, argv);
@@ -28,11 +18,16 @@ int main(int argc, char** argv)
     ll.insertList("如来佛祖");
     ll.insertList("bianbian");
     ll.printList();
-
-    thread thread("main");
-    thread.setRouter(thread_work);
-    thread.run();
-    sleep(50);
-
-    thread.detach();
+    writeFunc();
+    
+    sleep(100);
+    /* int m_fd = ::open("bian", O_CREAT|O_RDWR, 0644);
+     int len = 10;
+     ftruncate(m_fd, len);
+    char *addr = (char *)mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, m_fd, 0); 
+    if (addr == MAP_FAILED) {
+            fprintf(stderr, "mmap() failed: %s\n", strerror(errno));
+            exit(1);
+        }
+        memcpy(addr, "xxxx123456", 10);*/
 }

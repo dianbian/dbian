@@ -1,5 +1,7 @@
 #pragma once
 #include "comm/unp.h"
+#include "comm/thread.h"
+#include "comm/log.h"
 #include "socket.h"
 #include "signal.h"
 #include "communicate.h"
@@ -177,4 +179,74 @@ ser_main_poll(int argc, char** argv)
         }
     }
     return 0;
+}
+
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;  
+pthread_cond_t  condition = PTHREAD_COND_INITIALIZER;  
+int num = 0;
+
+void * thread_work(void*)
+{
+    while(1)
+    {      
+        {
+            printf("thread_work ");
+            //pthread_mutex_lock(&mutex);
+            guardMutex mt(&mutex);
+            printf("the thread increase the number:%d, pthreadid:%lu\n", num, (unsigned long)pthread_self());
+            num++;
+            printf("the thread increase the number:%d, pthreadid:%lu\n", num, (unsigned long)pthread_self());
+            //pthread_mutex_unlock(&mutex);
+            pthread_cond_signal(&condition);    //在unlock 之前
+        }
+        sleep(1);
+    }
+    return nullptr;
+}
+
+void * thread_work1(void*)
+{
+    while(1)
+    {
+        {
+            printf("thread_work1 ");
+            guardMutex mt(&mutex);
+            //pthread_mutex_lock(&mutex);
+            while(num == 0)
+                pthread_cond_wait(&condition, &mutex);
+            printf("the thread desc the number:%d, pthreadid:%lu\n", num, (unsigned long)pthread_self());
+            num--;
+            printf("the thread desc the number:%d, pthreadid:%lu\n", num, (unsigned long)pthread_self());
+            //pthread_mutex_unlock(&mutex);
+        }
+        sleep(1); 
+    }
+    return nullptr;
+}
+
+
+void writeFunc()
+{
+    log *t = new log();
+    t->initialize("bian.log");
+    sleep(2);
+    for (int i = 0; i < 1000; ++i) {
+        char buff[128];
+        struct timeval time;
+        gettimeofday(&time, nullptr);
+        snprintf(buff, sizeof(buff), "name_%ld________%d_%lu\n", (time.tv_sec*1000 + time.tv_usec/1000), i, (unsigned long)pthread_self());
+        t->writelog(buff);
+        printf("the thread desc the number:%s, pthreadid:%lu\n", buff, (unsigned long)pthread_self());
+        sleep(1); 
+    }
+
+    /* int m_fd = ::open("bian", O_CREAT|O_RDWR, 0644);
+     int len = 10;
+     ftruncate(m_fd, len);
+    char *addr = (char *)mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, m_fd, 0); 
+    if (addr == MAP_FAILED) {
+            fprintf(stderr, "mmap() failed: %s\n", strerror(errno));
+            exit(1);
+        }
+        memcpy(addr, "xxxx123456", 10);*/
 }

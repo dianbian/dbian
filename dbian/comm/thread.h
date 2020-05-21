@@ -7,16 +7,16 @@
 //保护共享变量
 class guardMutex {
 private:
-    pthread_mutex_t m_mutex;
+    pthread_mutex_t *m_mutex;   //锁唯一，引用计数不能增加
 
 public:
     guardMutex() = delete;
-    explicit guardMutex(pthread_mutex_t mutex) {
+    explicit guardMutex(pthread_mutex_t *mutex) {
         m_mutex = mutex;
-        pthread_mutex_lock(&m_mutex);
+        pthread_mutex_lock(&*m_mutex);
     }
     ~guardMutex() {
-        pthread_mutex_unlock(&m_mutex);
+        pthread_mutex_unlock(&*m_mutex);
     }
 };
 
@@ -25,6 +25,7 @@ private:
     pthread_t m_tid;
     char pthreadName[32];
     void *(*m_methodRouter)(void *);
+    void *m_args;
 
 public:
     thread(const char *name) {
@@ -41,10 +42,11 @@ public:
 
     void setRouter(void *(*methodRouter)(void *), void *args = nullptr) {
         m_methodRouter = methodRouter;
+        m_args = args;
     }
 
     int run() {
-        return pthread_create(&m_tid, nullptr, m_methodRouter, nullptr);
+        return pthread_create(&m_tid, nullptr, m_methodRouter, m_args);
     }
     
     int getThreadId() {
