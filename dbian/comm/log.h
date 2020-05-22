@@ -6,6 +6,8 @@
 #include <sys/mman.h>
 #include <iostream>
 
+#define MAXCHAIN 50
+
 class log {
 private:
     LinkedList m_produce;
@@ -75,15 +77,15 @@ public:
         //msync(addr, fileLen, MS_ASYNC); //MS_ASYNC
         msync(addr + st.st_size, len, MS_SYNC); //MS_ASYNC
 	    munmap(addr, fileLen);
-        return;
+        return; 
     }
 
     void produce(const char* logContent) {
         guardMutex gm(&m_mutex);
+        printf("p number:%lu, %lu, pthreadid:%lu\n\n", m_produce.getSize(), m_comsume.getSize(), (unsigned long)pthread_self());
         m_produce.insertList(logContent);
-        printf("the thread increase the number:%lu, %lu, pthreadid:%lu\n", m_produce.getSize(), m_comsume.getSize(), (unsigned long)pthread_self());
-        if (m_produce.getSize() >= LISTLEN && m_comsume.getSize() == 0) {    //条件
-            m_produce.swapList(m_comsume);
+        if (m_produce.getSize() >= MAXCHAIN && m_comsume.getSize() == 0) {    //条件
+            m_comsume.swapList(m_produce);
             pthread_cond_signal(&m_cond);
         }
         return;
@@ -91,8 +93,9 @@ public:
 
     void comsume() {
         while (1) {
+            //sleep(1); //消费要尽量快
             guardMutex gm(&m_mutex);
-            printf("the thread increase the number:%lu, %lu, pthreadid:%lu\n", m_produce.getSize(), m_comsume.getSize(), (unsigned long)pthread_self());
+            printf("c number:%lu, %lu, pthreadid:%lu\n\n", m_produce.getSize(), m_comsume.getSize(), (unsigned long)pthread_self());
             if (m_comsume.getSize() == 0) {
                 pthread_cond_wait(&m_cond, &m_mutex);
             }
@@ -102,7 +105,6 @@ public:
                 continue;
             }
             writelog(node->data.data);
-            sleep(1);
         }
     }
 

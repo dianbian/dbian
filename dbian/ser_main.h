@@ -1,7 +1,6 @@
 #pragma once
 #include "comm/unp.h"
 #include "comm/thread.h"
-#include "comm/log.h"
 #include "socket.h"
 #include "signal.h"
 #include "communicate.h"
@@ -212,9 +211,8 @@ void * thread_work1(void*)
         char buff[128];
         struct timeval time;
         gettimeofday(&time, nullptr);
-        printf("xxxxxxxxxxxxx\n\r");
         LOG_DEBUG("name_%ld________%d_%lu", (time.tv_sec*1000 + time.tv_usec/1000), i, (unsigned long)pthread_self());
-        sleep(2); 
+        sleep(1); 
         i += 2;
     }
     return nullptr;
@@ -233,9 +231,21 @@ void writeFunc()
     pro.setRouter(thread_work1);
     pro.run();
 
-    /*thread the("logThread");
+    thread pro1("logpro"); 
+    pro1.setRouter(thread_work1);
+    pro1.run();
+
+    thread pro2("logpro"); 
+    pro2.setRouter(thread_work1);
+    pro2.run();
+
+    thread pro3("logpro"); 
+    pro3.setRouter(thread_work1);
+    pro3.run();
+
+    thread the("logThread");
     the.setRouter(log::runTask, t);
-    the.run();*/
+    the.run();
     /*while (1) {
         char buff[128];
         struct timeval time;

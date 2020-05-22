@@ -9,6 +9,7 @@
 //数据结构, 为降低分配与清理的性能, 只增加不删除, 标志位清除，重复利用
 
 #define DATALENGTH 2020
+#define LISTLEN 50
 
 typedef struct data {
     size_t len;
@@ -38,10 +39,14 @@ private:
     }
 
     pNode InitNode() {
-        pNode node = (pNode)malloc(sizeof(LinkedList));
+        pNode node = (pNode)malloc(sizeof(List));
         node->pPrev = nullptr;
         node->pNext = nullptr;
         return node; 
+    }
+
+    void setSize(size_t len) {
+        m_len = len;
     }
 
 public:
@@ -56,7 +61,7 @@ public:
         freeList();
     }
 
-    size_t getSize() {
+    size_t getSize() const {
         return m_len;
     }
 
@@ -92,10 +97,10 @@ public:
         size_t len = strlen(str) > DATALENGTH ? DATALENGTH : strlen(str);
         while (p) {
             if (p->data.len == 0) {
-                printf("len.... = %ld, %s\n", len, str);
                 memcpy(p->data.data, str, len);
                 p->data.data[len] = '\0';
                 p->data.len = len;
+                m_len++;
                 return true;
             }
             p = p->pNext;
@@ -146,5 +151,8 @@ public:
         llist.getTail() = m_tail;
         m_head = p;
         m_tail = q;
+        m_middle = p;
+        m_len = llist.getSize();
+        llist.setSize(0);        
     }
 };

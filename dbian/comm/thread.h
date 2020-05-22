@@ -46,7 +46,10 @@ public:
     }
 
     int run() {
-        return pthread_create(&m_tid, nullptr, m_methodRouter, m_args);
+        pthread_attr_t attr;
+        pthread_attr_init(&attr);
+        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);    //游离状态
+        return pthread_create(&m_tid, &attr, m_methodRouter, m_args);
     }
     
     int getThreadId() {
