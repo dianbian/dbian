@@ -22,12 +22,20 @@ typedef struct node {
 }List, *pNode;
 
 
-class LinkedList{
+class LinkedList {
 private:
     pNode m_head;
     pNode m_middle;
     pNode m_tail;
     size_t m_len;
+
+    pNode& getHead() {
+        return m_head;
+    }
+
+    pNode& getTail() {
+        return m_tail;
+    }
 
     pNode InitNode() {
         pNode node = (pNode)malloc(sizeof(LinkedList));
@@ -48,16 +56,22 @@ public:
         freeList();
     }
 
-    void initList(size_t nSize = 1000) {
+    size_t getSize() {
+        return m_len;
+    }
+
+    void initList(size_t nSize = LISTLEN) {
         if (m_head == nullptr) {    //do not memset
             m_head = InitNode();
-            m_middle = InitNode();
             m_tail = InitNode();
-            printf("leng = %ld\n", sizeof(List));
+            m_middle = m_head;
             m_head->pNext = m_tail;
             m_tail->pPrev = m_head;
+            m_tail->pNext = nullptr;
         }
         for (size_t i = 0; i < nSize; ++i) {
+            pNode node = InitNode();
+            insertList(node);
         }
     }
 
@@ -76,11 +90,9 @@ public:
     bool insertList(const char* str) {
         pNode p = m_head;
         size_t len = strlen(str) > DATALENGTH ? DATALENGTH : strlen(str);
-        //printf("len = %ld, %s\n", len, str);
         while (p) {
-            
             if (p->data.len == 0) {
-                printf("len = %ld, %s\n", len, str);
+                printf("len.... = %ld, %s\n", len, str);
                 memcpy(p->data.data, str, len);
                 p->data.data[len] = '\0';
                 p->data.len = len;
@@ -92,13 +104,16 @@ public:
         memcpy(node->data.data, str, len);
         node->data.data[len] = '\0';
         node->data.len = len;
+        m_len++;
         return insertList(node);
     }
 
     void printList() {
         printf("\n\n");
         while (m_head) {
-            printf("len = %ld, %s\n", m_head->data.len, m_head->data.data);
+            if (m_head->data.len != 0) {
+                printf("lenxxxxx = %ld, %s\n", m_head->data.len, m_head->data.data);
+            }
             m_head = m_head->pNext;
         }
     }
@@ -106,8 +121,30 @@ public:
     void freeList() {
         printf("\n\n");
         while (m_head) {
-            free(m_head);
+            pNode p = m_head;
+            free(p);
             m_head = m_head->pNext;
         }
+    }
+
+    const pNode getNode() {
+        while (m_middle) {
+            if (m_middle->data.len != 0) {
+                m_middle->data.len = 0;
+                m_len--;
+                return m_middle;
+            }
+            m_middle = m_middle->pNext;
+        }
+        return nullptr;
+    }
+
+    void swapList(LinkedList& llist) {
+        pNode p = llist.getHead();
+        pNode q = llist.getTail();
+        llist.getHead() = m_head;
+        llist.getTail() = m_tail;
+        m_head = p;
+        m_tail = q;
     }
 };

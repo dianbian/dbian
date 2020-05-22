@@ -206,20 +206,16 @@ void * thread_work(void*)
 
 void * thread_work1(void*)
 {
+    int i = 10000;
     while(1)
     {
-        {
-            printf("thread_work1 ");
-            guardMutex mt(&mutex);
-            //pthread_mutex_lock(&mutex);
-            while(num == 0)
-                pthread_cond_wait(&condition, &mutex);
-            printf("the thread desc the number:%d, pthreadid:%lu\n", num, (unsigned long)pthread_self());
-            num--;
-            printf("the thread desc the number:%d, pthreadid:%lu\n", num, (unsigned long)pthread_self());
-            //pthread_mutex_unlock(&mutex);
-        }
-        sleep(1); 
+        char buff[128];
+        struct timeval time;
+        gettimeofday(&time, nullptr);
+        printf("xxxxxxxxxxxxx\n\r");
+        LOG_DEBUG("name_%ld________%d_%lu", (time.tv_sec*1000 + time.tv_usec/1000), i, (unsigned long)pthread_self());
+        sleep(2); 
+        i += 2;
     }
     return nullptr;
 }
@@ -227,18 +223,27 @@ void * thread_work1(void*)
 
 void writeFunc()
 {
-    log *t = new log();
+    log *t = log::getInstance();
     t->initialize("bian.log");
+
+    printf("xxxxxxxxyyyyyyyyyyyyy\n");
     sleep(2);
-    while (1) {
+
+    thread pro("logpro"); 
+    pro.setRouter(thread_work1);
+    pro.run();
+
+    /*thread the("logThread");
+    the.setRouter(log::runTask, t);
+    the.run();*/
+    /*while (1) {
         char buff[128];
         struct timeval time;
         gettimeofday(&time, nullptr);
         snprintf(buff, sizeof(buff), "name_%ld________%d_%lu\n", (time.tv_sec*1000 + time.tv_usec/1000), 1, (unsigned long)pthread_self());
-        t->writelog(buff);
-        printf("the thread desc the number:%s, pthreadid:%lu\n", buff, (unsigned long)pthread_self());
-        //sleep(1); 
-    }
+        LOG_DEBUG("name_%ld________%d_%lu", (time.tv_sec*1000 + time.tv_usec/1000), 1, (unsigned long)pthread_self());
+        sleep(1); 
+    }*/
 
     /* int m_fd = ::open("bian", O_CREAT|O_RDWR, 0644);
      int len = 10;

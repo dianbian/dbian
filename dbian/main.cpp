@@ -1,7 +1,9 @@
 #include "ser_main.h"
 #include "comm/linkedList.h"
 #include "comm/thread.h"
+#include "comm/unp.h"
 #define xxxxx 0
+
 int main(int argc, char** argv)
 {
     //ser_main(argc, argv);
@@ -20,29 +22,11 @@ int main(int argc, char** argv)
     ll.insertList("如来佛祖");
     ll.insertList("bianbian");
     ll.printList();
+    printf("ylllllllllllll\n");
     writeFunc();
     
     sleep(100);
 #else
-    /* int m_fd = ::open("bian", O_CREAT|O_RDWR, 0644);
-     int len = 10;
-     ftruncate(m_fd, len);
-    char *addr = (char *)mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, m_fd, 0); 
-    if (addr == MAP_FAILED) {
-            fprintf(stderr, "mmap() failed: %s\n", strerror(errno));
-            exit(1);
-        }
-        memcpy(addr, "xxxx123456", 10);*/
-
-    char data[] = "phzphz\nphzphz";
-	int len = strlen(data);
-	int fd = open("test.txt", O_RDWR | O_CREAT, 00777);
- 	FILE *fp = fdopen(fd, "w");
-	fseek(fp, len - 1, SEEK_END);
-	fwrite("", sizeof(char), 1, fp);
-	char *buffer = (char *)mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-	fclose(fp);
-	memcpy(buffer, data, len);
-	munmap(buffer, len);
+    LOG_DEBUG("%d, %f, %s", inumber, fnumber, string);
 #endif
 }
