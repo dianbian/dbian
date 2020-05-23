@@ -218,6 +218,21 @@ void * thread_work1(void*)
     return nullptr;
 }
 
+void * thread_work2(void*)
+{
+    int i = 10000;
+    while(1)
+    {
+        char buff[128];
+        struct timeval time;
+        gettimeofday(&time, nullptr);
+        LOG_ERROR("bianbianabian____%ld________%d_%lu", (time.tv_sec*1000 + time.tv_usec/1000), i, (unsigned long)pthread_self());
+        sleep(1); 
+        i += 2;
+    }
+    return nullptr;
+}
+
 
 void writeFunc()
 {
@@ -236,11 +251,11 @@ void writeFunc()
     pro1.run();
 
     thread pro2("logpro"); 
-    pro2.setRouter(thread_work1);
+    pro2.setRouter(thread_work2);
     pro2.run();
 
     thread pro3("logpro"); 
-    pro3.setRouter(thread_work1);
+    pro3.setRouter(thread_work2);
     pro3.run();
 
     thread the("logThread");

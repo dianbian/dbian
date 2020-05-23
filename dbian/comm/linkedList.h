@@ -151,7 +151,7 @@ public:
         llist.getTail() = m_tail;
         m_head = p;
         m_tail = q;
-        m_middle = p;
+        m_middle = p;   //特有
         m_len = llist.getSize();
         llist.setSize(0);        
     }

@@ -14,3 +14,7 @@ fi
 if [ -f './Makefile' ]; then
     rm Makefile
 fi
+
+if [ -f './serv' ]; then
+	rm serv
+fi

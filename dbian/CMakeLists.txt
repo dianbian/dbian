@@ -1,9 +1,9 @@
 # CMake 最低版本号要求
 cmake_minimum_required (VERSION 2.8)
 # 项目信息
-project (Serv)
+project (serv)
 # 指定生成目标 单个文件
-add_executable(Serv main.cpp)
+add_executable(serv main.cpp)
 # 查找当前目录下的所有源文件
 # 并将名称保存到 DIR_SRCS 变量  多个文件
 #aux_source_directory(. DIR_SRCS)
