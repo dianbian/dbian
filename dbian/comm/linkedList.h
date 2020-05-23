@@ -137,6 +137,7 @@ public:
             if (m_middle->data.len != 0) {
                 m_middle->data.len = 0;
                 m_len--;
+                //m_middle = m_middle->pNext;   //todo
                 return m_middle;
             }
             m_middle = m_middle->pNext;
