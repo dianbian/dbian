@@ -49,6 +49,7 @@ public:
         pthread_attr_t attr;
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);    //游离状态
+        pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);     //设置内核级的线程,以获取较高的响应速度
         return pthread_create(&m_tid, &attr, m_methodRouter, m_args);
     }
     
