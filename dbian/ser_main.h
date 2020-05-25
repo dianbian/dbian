@@ -4,6 +4,7 @@
 #include "socket.h"
 #include "signal.h"
 #include "communicate.h"
+#include "epoll.h"
 
 int
 ser_main(int argc, char** argv)
@@ -279,4 +280,19 @@ void writeFunc()
             exit(1);
         }
         memcpy(addr, "xxxx123456", 10);*/
+}
+
+void epollFunc()
+{
+    log *t = log::getInstance();
+    t->initialize("bian.log");
+
+    thread pro("logpro"); 
+    pro.setRouter(thread_work1);
+    pro.run();
+
+    epoll *ep = new epoll();
+    thread el("epoll");
+    el.setRouter(epoll::runTask, ep);
+    el.run();
 }

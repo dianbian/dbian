@@ -11,8 +11,8 @@
 
 class log {
 private:
-    LinkedList m_produce;
-    LinkedList m_comsume;
+    linkedList m_produce;
+    linkedList m_comsume;
     std::string m_fileName;
     std::string m_filePath;
     FILE *m_fp;

@@ -12,7 +12,9 @@
 #define LISTLEN 50
 
 typedef struct data {
-    size_t len;
+    size_t len;     //日志里面特定长度，在con里也是长度
+    size_t index;   //起始index 一个index + 1 == sum 终止
+    size_t idSum;   //总数
     char data[DATALENGTH];  //if input size > DATALENGTH, malloc
 }dataNode;
 
@@ -23,7 +25,7 @@ typedef struct node {
 }List, *pNode;
 
 
-class LinkedList {
+class linkedList {
 private:
     pNode m_head;
     pNode m_middle;
@@ -42,6 +44,9 @@ private:
         pNode node = (pNode)malloc(sizeof(List));
         node->pPrev = nullptr;
         node->pNext = nullptr;
+        node->data.index = 0;
+        node->data.idSum = 0;
+        node->data.len = 0;
         return node; 
     }
 
@@ -50,14 +55,14 @@ private:
     }
 
 public:
-    LinkedList() {
+    linkedList() {
         m_head = nullptr;
         m_middle = nullptr;
         m_tail = nullptr;
         m_len = 0;
     }
 
-    ~LinkedList() {
+    ~linkedList() {
         freeList();
     }
 
@@ -145,7 +150,7 @@ public:
         return nullptr;
     }
 
-    void swapList(LinkedList& llist) {
+    void swapList(linkedList& llist) {
         pNode p = llist.getHead();
         pNode q = llist.getTail();
         llist.getHead() = m_head;

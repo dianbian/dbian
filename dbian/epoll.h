@@ -1,15 +1,36 @@
 #pragma once
 
 #include <sys/epoll.h>
+#include <vector>
 
-class Epoll {
+#include "comm/unp.h"
+#include "connection.h"
+
+
+class epoll {
 private:
-    int m_epfd;
+    int m_epollFd;
+    int m_listenFd;
+    struct sockaddr_in m_addr;
+    socklen_t m_len; 
+    std::vector<connection *> m_connVec;    //重复利用
 public:
+    epoll(int nSize = 1) {
+        m_epollFd = 0;
+        m_listenFd = 0;
+        for (size_t i = 0; i < LISTENQ; ++i) {
+            connection *cc = new connection();
+            m_connVec.push_back(cc);
+        }
+    }
+
+    ~epoll() {    
+    }
+    
     bool initialize() {
         //创建epoll int epoll_create(int size);
-        m_epfd = epoll_create(1);
-        if (m_epfd < 0) {
+        m_epollFd = epoll_create(1);
+        if (m_epollFd < 0) {
             perror("epoll create error");
             return false;
         }
@@ -23,23 +44,24 @@ public:
         return;
     }
 
-    void reset_oneshot(int epollfd, int fd) {
-        epoll_event event;
+    void reset_oneshot(int fd, connection *conn) {
+        struct epoll_event event;
         event.data.fd = fd;
         event.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
-        epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
+        event.data.ptr = this;
+        epoll_ctl(m_epollFd, EPOLL_CTL_MOD, fd, &event);
     }
 
-    bool addFd(int fd, uint32_t events = 0) {
+    bool addFd(int fd, connection *conn) {
         //定义事件
-        struct epoll_event ev;
-        ev.events = EPOLLIN | events | EPOLLONESHOT;
-        ev.data.fd = fd;
-
+        struct epoll_event event;
+        event.data.fd = fd;
+        event.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+        event.data.ptr = conn;
         setnonblocking(fd);
     
         //epoll_ctl(int epfd,int op,int fd,struct epoll_event *event);
-        int ret = epoll_ctl(m_epfd, EPOLL_CTL_ADD, fd, &ev);
+        int ret = epoll_ctl(m_epollFd, EPOLL_CTL_ADD, fd, &event);
         if (ret < 0) {
             perror("epoll ctrl error");
             return false;
@@ -48,8 +70,7 @@ public:
     }
 
     bool delFd(int fd) {
-        int fd = sock.GetSockFd();
-        int ret = epoll_ctl(_epfd, EPOLL_CTL_DEL, fd, NULL);
+        int ret = epoll_ctl(m_epollFd, EPOLL_CTL_DEL, fd, NULL);
         if (ret < 0) {
             perror("epoll ctrl error");
             return false;
@@ -57,45 +78,58 @@ public:
         return true;
     }
     
-    bool waitFd(std::vector<long long> &list, int ms_timeout = 3000) {
+    bool waitFd(std::vector<uintptr_t> &list, int ms_timeout = 3000) {
         //int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
-        struct epoll_event evs[10];
-        int nfds = epoll_wait(_epfd, evs, 10, ms_timeout);
-        if (nfds < 0) {
-            perror("epoll wait error");
+        struct epoll_event evs[LISTENQ];
+        int nfds = epoll_wait(m_epollFd, evs, LISTENQ, ms_timeout);
+        if (nfds <= 0) {
+            LOG_ERROR("epoll wait error");
             return false;
         }else if (nfds == 0) {
-            std::cout << "epoll wait timeout\n";
+            LOG_ERROR("epoll wait timeout");
             return false;
-        }
-        for (int i = 0; i < nfds; i++) {
-            int fd = evs[i].data.fd;
-            TcpSocket sock;
-            sock.SetSockFd(fd);
-            list.push_back(sock);
         }
         return true;
     }
 
-    int accept() {
-        struct sockaddr_in cli_addr;
-        socklen_t len; 
+    void accept() {
         int newFd;
-        while ( (newFd = accept(listener, (SA *) &cli_addr, &len)) != 0) {
-            int newFd = accept(listener, (SA *) &cli_addr, &len); 
-            if (newFd < 0) { 
-                perror("accept"); 
-                continue; 
-            } else {
-                    printf("有连接来自于： %s:%d， 分配的 socket 为:%d/n", inet_ntoa(their_addr.sin_addr), ntohs(their_addr.sin_port), newFd);
+        memset(&m_addr, 0, sizeof(m_addr));
+        while ( (newFd = ::accept(m_listenFd, (SA *)&m_addr, &m_len)) != 0) {
+            for (auto& conn : m_connVec) {
+                if (conn->getFlag()) {
+                    conn->setFd(newFd);
+                    conn->setFlag(1);
+                    conn->setAddr(m_addr);
+                    addFd(newFd, conn);
+                    return;
+                }
             }
-            addFd(newFd);
+            connection *conn = new connection(newFd, 1, m_addr);
+            addFd(newFd, conn);
+        }
+        return;
+    }
+
+    void dealHandle() {
+        while (1) {
+            std::vector<uintptr_t> list;
+            if (!waitFd(list)) {
+                sleep(1);
+                continue;
+            }
+            for (auto &connPtr : list) {
+                connection *conn = (connection *)connPtr;
+                if (conn != nullptr) {
+
+                }
+            }
         }
     }
 
     static void *runTask(void *arg) {
-        Epoll *tmp = (Epoll*)arg;
-        tmp->comsume();
+        epoll *tmp = (epoll*)arg;
+        tmp->dealHandle();
         return nullptr;
     }
-}
+};
