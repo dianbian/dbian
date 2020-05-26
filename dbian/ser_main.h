@@ -287,11 +287,13 @@ void epollFunc()
     log *t = log::getInstance();
     t->initialize("bian.log");
 
-    thread pro("logpro"); 
-    pro.setRouter(thread_work1);
-    pro.run();
+    thread the("logThread");
+    the.setRouter(log::runTask, t);
+    the.run();
 
     epoll *ep = new epoll();
+    if (!ep->initialize())
+        return;
     thread el("epoll");
     el.setRouter(epoll::runTask, ep);
     el.run();

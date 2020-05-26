@@ -98,7 +98,6 @@ public:
             if (m_comsume.getSize() == ZERO) {
                 pthread_cond_wait(&m_cond, &m_mutex);
             }
-            printf("c number:%lu, %lu ", m_produce.getSize(), m_comsume.getSize());
             pNode node = m_comsume.getNode();
             if (node == nullptr) {
                 sleep(1);

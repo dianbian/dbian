@@ -18,3 +18,7 @@ fi
 if [ -f './serv' ]; then
 	rm serv
 fi
+
+if [ -f './bian.log' ]; then
+	rm bian.log
+fi

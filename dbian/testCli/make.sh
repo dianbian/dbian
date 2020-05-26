@@ -14,4 +14,8 @@ fi
 if [ -f './Makefile' ]; then
     rm Makefile
 fi
+
+if [ -f './cli' ]; then
+    rm cli
+fi
 #cmake .

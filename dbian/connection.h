@@ -29,7 +29,8 @@ public:
         m_sendBuf.initList();
     }
     
-    ~connection();
+    ~connection() {
+    }
 
     bool getFlag() {
         return m_flag == ZERO;  //等于0为true, 可用

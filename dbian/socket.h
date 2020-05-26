@@ -94,3 +94,40 @@ Read(int connFd, void *buff, size_t n)
     }
     return ret;
 }
+
+static int initTcpSocket(const char* ip, int port) {
+    int listenfd;
+    int backLog = LISTENQ;
+    char *ptr;
+    int ret;
+    int opt = 1;
+    struct sockaddr_in servaddr, cliaddr;
+    char buff[MAXLINE];
+
+    listenfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (listenfd < 0) {
+        return -1;
+    }
+
+    if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(&opt)) < 0) {         
+        return -1;
+    }
+    
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_port = htons(port);
+
+    ret = bind(listenfd, (SA *)&servaddr, sizeof(servaddr));
+    if (ret < 0) {
+        return -1;
+    }
+
+    if ((ptr = getenv("LISTEN")) != NULL)
+        backLog = atoi(ptr);
+    ret = listen(listenfd, backLog);
+    if (ret < 0) {
+        return -1;
+    }
+    return listenfd;
+}
