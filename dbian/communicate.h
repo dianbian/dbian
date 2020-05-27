@@ -71,6 +71,7 @@ str_cli(FILE *fp, int sockFd)
     char sendLine[MAXLINE], recvLine[MAXLINE];
 
     snprintf(sendLine, sizeof(sendLine), "%s", "alksdja;lksdakncmxzcn;lkasjrwpoierju[pwdlkasmd;laKSJD;LAKSDJF;LASKDJF;LASDKJF;ALSDKFJN;ALSDKJFL;K");
+    printf("%s\n", sendLine);
     Writen(sockFd, sendLine, strlen(sendLine));
     return;
     while (fgets(sendLine, MAXLINE, fp) != NULL) {

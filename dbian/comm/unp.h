@@ -22,11 +22,13 @@
 #include <poll.h>
 #include <sys/sysctl.h>
 #include <stdarg.h>
+#include <netinet/tcp.h>
 #include "log.h"
 
 #define MAXLINE 4096
 #define LISTENQ 1024
 #define MAXBUFF 2048
+#define TESTPORT 13579
 
 #define DATE_FORMAT "[%04d-%02d-%02d %02d:%02d:%02d]"
 
@@ -52,7 +54,6 @@ void LogDebug(int iLine, const char *pFunc, const char *format, ...) {
     char buffData[64];
     char buffCont[MAXBUFF];
     char buffer[MAXBUFF];
-    int errno_save = errno;
 
     va_list argptr; //声明一个转换参数的变量
     va_start(argptr, format); //初始化变量  
@@ -60,7 +61,7 @@ void LogDebug(int iLine, const char *pFunc, const char *format, ...) {
     va_end(argptr); //结束变量列表,和va_start成对使用  
 
     snprintf(buffData, sizeof(buffData), DATE_FORMAT, now->tm_year+1900, now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
-    snprintf(buffer, sizeof(buffer), "%s #DEBUG# %02d %s %s %s\n", buffData, iLine, pFunc, buffCont, strerror(errno_save));
+    snprintf(buffer, sizeof(buffer), "%s #DEBUG# %02d %s %s \n", buffData, iLine, pFunc, buffCont);
     log::getInstance()->produce(buffer);
 }
 

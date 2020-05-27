@@ -84,6 +84,7 @@ public:
     void produce(const char* logContent) {
         guardMutex gm(&m_mutex);
         m_produce.insertList(logContent);
+        printf("111\n");
         if (m_produce.getSize() >= ZERO) {    //条件
             m_comsume.swapList(m_produce);
             pthread_cond_signal(&m_cond);
@@ -98,6 +99,7 @@ public:
             if (m_comsume.getSize() == ZERO) {
                 pthread_cond_wait(&m_cond, &m_mutex);
             }
+            printf("222\n");
             pNode node = m_comsume.getNode();
             if (node == nullptr) {
                 sleep(1);

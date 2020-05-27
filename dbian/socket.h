@@ -6,6 +6,7 @@ Socket(int family, int type, int protocol)
 {
     int bindFd = socket(family, type, protocol);
     if (bindFd < 0) {
+        printf("socket error\n");
         return -1;
     }
     return bindFd;
@@ -40,6 +41,7 @@ Connect(int sockFd, SA *servAddr, socklen_t addrLen)
 {
     int ret = connect(sockFd, servAddr, addrLen);
     if (ret < 0) {
+        printf("conn error\n");
         return -1;
     }
     return ret;
@@ -101,21 +103,23 @@ static int initTcpSocket(const char* ip, int port) {
     char *ptr;
     int ret;
     int opt = 1;
-    struct sockaddr_in servaddr, cliaddr;
+    struct sockaddr_in servaddr;
     char buff[MAXLINE];
 
     listenfd = socket(AF_INET, SOCK_STREAM, 0);
     if (listenfd < 0) {
         return -1;
     }
-
-    if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(&opt)) < 0) {         
+    //设置端口复用
+    if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(&opt)) < 0)
         return -1;
-    }
+    //禁用Nagle算法
+    if (setsockopt(listenfd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) < 0 )
+        return -1;
     
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_addr.s_addr = inet_addr(ip);
     servaddr.sin_port = htons(port);
 
     ret = bind(listenfd, (SA *)&servaddr, sizeof(servaddr));
@@ -129,5 +133,6 @@ static int initTcpSocket(const char* ip, int port) {
     if (ret < 0) {
         return -1;
     }
+    LOG_DEBUG("liste on %s, %d", ip, port);
     return listenfd;
 }

@@ -40,7 +40,7 @@ public:
         m_flag = flag;
     }
 
-    int getFd() {
+    int getFd() const {
         return m_fd;
     }
 

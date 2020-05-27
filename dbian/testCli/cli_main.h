@@ -13,13 +13,14 @@ cli_main(int argc, char** argv)
 
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(53101);
+    servaddr.sin_port = htons(TESTPORT);
     Inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
 
     Connect(sockfd, (SA *)&servaddr, sizeof(servaddr));
     
     str_cli(stdin, sockfd);
     
+    while(1) {};
     Close(sockfd);
 }
 
@@ -34,7 +35,7 @@ cli_main_udp(int argc, char** argv)
 
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(53101);
+    servaddr.sin_port = htons(TESTPORT);
     Inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
     
     dg_cli(stdin, sockfd, (SA *)&servaddr, sizeof(servaddr));

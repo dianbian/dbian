@@ -13,6 +13,7 @@ private:
     int m_listenFd;
     struct sockaddr_in m_addr;
     socklen_t m_len; 
+    char m_buff[MAXLINE];
     std::vector<connection *> m_connVec;    //重复利用
 public:
     epoll(size_t nSize = LISTENQ) {
@@ -29,7 +30,7 @@ public:
     
     bool initialize() {
         //创建epoll int epoll_create(int size);
-        m_listenFd = initTcpSocket("127.0.0.1", 53101);
+        m_listenFd = initTcpSocket("127.0.0.1", TESTPORT);
         if (m_listenFd < 0)
             return false;
         m_epollFd = epoll_create(1);
@@ -54,7 +55,7 @@ public:
     void reset_oneshot(int fd, connection *conn) {
         struct epoll_event event;
         event.data.fd = fd;
-        event.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+        event.events = EPOLLIN | EPOLLET;
         event.data.ptr = this;
         epoll_ctl(m_epollFd, EPOLL_CTL_MOD, fd, &event);
     }
@@ -77,14 +78,15 @@ public:
         //定义事件
         struct epoll_event event;
         event.data.fd = fd;
-        event.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+        event.events = EPOLLIN | EPOLLET;
         event.data.ptr = conn;
         setnonblocking(fd);
     
         //epoll_ctl(int epfd,int op,int fd,struct epoll_event *event);
         int ret = epoll_ctl(m_epollFd, EPOLL_CTL_ADD, fd, &event);
         if (ret < 0) {
-            perror("epoll ctrl error");
+            printf("epoll ctl fd error 111111111 \n");
+            exit(0);
             return false;
         }
         return true;
@@ -93,47 +95,54 @@ public:
     bool delFd(int fd) {
         int ret = epoll_ctl(m_epollFd, EPOLL_CTL_DEL, fd, NULL);
         if (ret < 0) {
-            perror("epoll ctrl error");
+            printf("epoll ctl fd error\n");
+            exit(0);
             return false;
         }
         return true;
     }
 
     
-    bool waitFd(std::vector<uintptr_t> &list, int ms_timeout = 3000) {
+    size_t waitFd(std::vector<uintptr_t> &list, int ms_timeout = 3000) {
         //int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
         struct epoll_event evs[LISTENQ];
         int nfds = epoll_wait(m_epollFd, evs, LISTENQ, ms_timeout);
         if (nfds <= 0) {
-            LOG_ERROR("epoll wait error");
             return false;
         }
         for (int i = 0; i < nfds; ++i) {
             if (evs[i].data.fd == m_listenFd)
                 accept();
-            else
+            else if (evs[i].events & EPOLLIN)
                 list.push_back((uintptr_t)evs[i].data.ptr);
         }
-        return true;
+        printf("nfds = %d vec size= %ld\n", nfds, list.size());
+        LOG_DEBUG("nfds = %d vec size= %ld", nfds, list.size());
+        return list.size();
     }
 
     void accept() {
         int newFd;
-        LOG_ERROR("epoll accept");
         memset(&m_addr, 0, sizeof(m_addr));
-        while ( (newFd = ::accept(m_listenFd, (SA *)&m_addr, &m_len)) != 0) {
+        memset(m_buff, 0, sizeof(m_buff));
+        while ( (newFd = ::accept(m_listenFd, (SA *)&m_addr, &m_len)) > 0) {
+            bool flag = true;
             for (auto& conn : m_connVec) {
                 if (conn->getFlag()) {
                     conn->setFd(newFd);
                     conn->setFlag(1);
                     conn->setAddr(m_addr);
-                    LOG_ERROR("epoll wait error");
                     addConnetion(newFd, conn);
-                    return;
+                    flag = false;
+                    printf("epoll accept connection from %s, port %d, fd %d\n", 
+                        inet_ntop(AF_INET, &m_addr.sin_addr, m_buff, sizeof(m_buff)), ntohs(m_addr.sin_port), newFd);
+                    break;
                 }
             }
-            connection *conn = new connection(newFd, 1, m_addr);
-            addConnetion(newFd, conn);
+            if (flag) {
+                connection *conn = new connection(newFd, 1, m_addr);
+                addConnetion(newFd, conn);
+            }
         }
         return;
     }
@@ -141,18 +150,17 @@ public:
     void dealHandle() {
         while (1) {
             std::vector<uintptr_t> list;
-            if (!waitFd(list)) {
+            if (waitFd(list) == 0) {
                 sleep(1);
                 continue;
             }
-            LOG_ERROR("wait");
             for (auto &connPtr : list) {
                 connection *conn = (connection *)connPtr;
-                if (conn != nullptr) continue;
+                if (conn == nullptr) continue;
                 else {
                     char buf[2048];
                     readn(conn->getFd(), buf, 2048);
-                    printf("recv = %s\n", buf);
+                    LOG_DEBUG("fd = %d, recv = %s", conn->getFd(), buf);
                 }
             }
         }
