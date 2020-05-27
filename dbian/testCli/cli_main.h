@@ -20,7 +20,7 @@ cli_main(int argc, char** argv)
     
     str_cli(stdin, sockfd);
     
-    while(1) {};
+    sleep(5);
     Close(sockfd);
 }
 

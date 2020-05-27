@@ -91,7 +91,7 @@ int
 Read(int connFd, void *buff, size_t n)
 {
     size_t ret = read(connFd, buff, n);
-    if (ret != n) {
+    if (ret <= 0) {
         return -1;
     }
     return ret;
