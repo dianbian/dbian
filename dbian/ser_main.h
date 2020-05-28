@@ -282,6 +282,26 @@ void writeFunc()
         memcpy(addr, "xxxx123456", 10);*/
 }
 
+void testlen0(){
+    char buf[256];
+    snprintf(buf, sizeof(buf), "%s", "ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg");
+    printf("%s\n", buf);
+
+    char bu[128] = "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm";
+    int len = strlen(bu);
+    memcpy(buf, bu, strlen(bu));
+    printf("%s\n", buf);
+    buf[len] = '\0';
+    printf("%s\n", buf);
+
+    char buc[256] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    int len1 = strlen(buc);
+    memcpy(buf, buc, strlen(buc));
+    printf("%s\n", buf);
+    buf[len1] = '\0';
+    printf("%s\n", buf);
+}
+
 void epollFunc()
 {
     log *t = log::getInstance();

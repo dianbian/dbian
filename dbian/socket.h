@@ -97,7 +97,7 @@ Read(int connFd, void *buff, size_t n)
     return ret;
 }
 
-static int initTcpSocket(const char* ip, int port) {
+int initTcpSocket(const char* ip, int port) {
     int listenfd;
     int backLog = LISTENQ;
     char *ptr;

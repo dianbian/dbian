@@ -103,9 +103,10 @@ public:
         while (p) {
             if (p->data.len == 0) {
                 memcpy(p->data.data, str, len);
-                p->data.data[len] = '\0';
+                p->data.data[len] = '\0';   //好方法，strlen, sizeof, printf 不用memset
                 p->data.len = len;
                 m_len++;
+                //__sync_fetch_and_add(&m_len, 1);
                 return true;
             }
             p = p->pNext;
@@ -142,6 +143,7 @@ public:
             if (m_middle->data.len != 0) {
                 m_middle->data.len = 0;
                 m_len--;
+                //__sync_sub_and_fetch(&m_len, 1);
                 //m_middle = m_middle->pNext;   //todo
                 return m_middle;
             }

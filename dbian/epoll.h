@@ -90,7 +90,7 @@ public:
         //epoll_ctl(int epfd,int op,int fd,struct epoll_event *event);
         int ret = epoll_ctl(m_epollFd, EPOLL_CTL_ADD, fd, &event);
         if (ret < 0) {
-            printf("epoll ctl fd error 111111111 \n");
+            printf("epoll ctl fd error\n");
             exit(0);
             return false;
         }
@@ -114,6 +114,7 @@ public:
         if (nfds <= 0) {
             return false;
         }
+        LOG_DEBUG("nfds = %d epoll event", nfds);
         for (int i = 0; i < nfds; ++i) {
             if ((m_evt[i].events & EPOLLERR) || (m_evt[i].events & EPOLLHUP) ||  
               (!(m_evt[i].events & EPOLLIN))) {
@@ -127,7 +128,6 @@ public:
                 list.push_back((uintptr_t)m_evt[i].data.ptr);
             }
         }
-        LOG_DEBUG("nfds = %d vec size= %ld", nfds, list.size());
         return list.size();
     }
 
@@ -145,7 +145,7 @@ public:
                     addConnetion(newFd, conn);
                     m_connSum++;
                     flag = false;
-                    printf("epoll accept connection from %s, port %d, fd %d, sum = %ld\n", 
+                    LOG_DEBUG("epoll accept connection from %s, port %d, fd %d, sum = %ld", 
                         inet_ntop(AF_INET, &m_addr.sin_addr, m_buff, sizeof(m_buff)), 
                         ntohs(m_addr.sin_port), newFd, m_connSum);
                     break;
@@ -173,7 +173,6 @@ public:
         while (1) {
             std::vector<uintptr_t> list;
             if (waitFd(list) == 0) {
-                sleep(1);
                 continue;
             }
             for (auto &connPtr : list) {
@@ -186,10 +185,10 @@ public:
                         conn->setFlag(ZERO);
                         close(conn->getFd());
                         m_connSum--;
-                        printf("fd = %d, close, sum=%ld\n", conn->getFd(), m_connSum);    
+                        LOG_DEBUG("fd = %d, close, sum = %ld", conn->getFd(), m_connSum);    
                     }
                     else
-                        printf("fd = %d, sum=%ld, recv = %s\n", conn->getFd(), m_connSum, buf);
+                        LOG_DEBUG("fd = %d, sum = %ld, recv = %s", conn->getFd(), m_connSum, buf);
                 }
             }
         }

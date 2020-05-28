@@ -83,12 +83,13 @@ public:
 
     void produce(const char* logContent) {
         guardMutex gm(&m_mutex);
+        //pthread_mutex_lock(&m_mutex);
         m_produce.insertList(logContent);
-        printf("111\n");
-        if (m_produce.getSize() >= ZERO) {    //条件
+        if (m_produce.getSize() > ZERO && m_comsume.getSize() == ZERO) {    //条件
             m_comsume.swapList(m_produce);
             pthread_cond_signal(&m_cond);
         }
+        //pthread_mutex_unlock(&m_mutex);
         return;
     }
 
@@ -96,17 +97,17 @@ public:
         while (1) {
             //sleep(1); //消费要尽量快
             guardMutex gm(&m_mutex);
+            //pthread_mutex_lock(&m_mutex);
             if (m_comsume.getSize() == ZERO) {
                 pthread_cond_wait(&m_cond, &m_mutex);
             }
-            printf("222\n");
             pNode node = m_comsume.getNode();
             if (node == nullptr) {
-                sleep(1);
                 continue;
             }
             writelog(node->data.data);
             printf("%s", node->data.data);
+            //pthread_mutex_unlock(&m_mutex);
         }
     }
 
