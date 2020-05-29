@@ -1,5 +1,8 @@
+#pragma once
+
 #include "comm/unp.h"
 #include "socket.h"
+#include "msg.h"
 
 //ssize_t in 32bit like int, in 64bit lit long int
 ssize_t     //read n bytes from a descriptor
@@ -65,6 +68,25 @@ readline(int sockFd, void *vptr, size_t maxLen)
     return n;
 }
 
+int 
+writeMsg(int sockFd, size_t type, const char* buf, size_t len) {
+    if (len != strlen(buf))
+        return -1;
+    if (len <= 0)
+        return -1;
+    msgHeader msgh;
+    msgh.msgType = type;
+    msgh.msgLen = msgLen + len;
+    printf("%0x, len = %lu, bufflen = %lu, msglen = %d\n", msgh.msgType, msgLen, len, msgh.msgLen);
+    char sendLine[MAXLINE], recvLine[MAXLINE];
+    //snprintf(sendLine, "%s%s", &msgh, buf, msgh.msgLen);
+    memcpy(sendLine, &msgh, msgLen);
+    memcpy(sendLine + msgLen, buf, len);
+    printf("%s\n", sendLine);
+    writen(sockFd, sendLine, strlen(sendLine));
+    return len;
+}
+
 void
 str_cli(FILE *fp, int sockFd)
 {
@@ -72,8 +94,10 @@ str_cli(FILE *fp, int sockFd)
 
     snprintf(sendLine, sizeof(sendLine), "%s", "alksdja;lksdakncmxzcn;lkasjrwpoierju[pwdlkasmd;laKSJD;LAKSDJF;LASKDJF;LASDKJF;ALSDKFJN;ALSDKJFL;K");
     printf("%s\n", sendLine);
-    Writen(sockFd, sendLine, strlen(sendLine));
+    writen(sockFd, sendLine, strlen(sendLine));
     return;
+
+
     while (fgets(sendLine, MAXLINE, fp) != NULL) {
         
         if (readline(sockFd, recvLine, MAXLINE) == 0)

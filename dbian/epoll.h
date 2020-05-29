@@ -169,6 +169,7 @@ public:
     }
     void dealHandle() {
         char buf[2048];
+        msgHeader msg;
         m_evt = new epoll_event[LISTENQ];
         while (1) {
             std::vector<uintptr_t> list;
@@ -179,16 +180,21 @@ public:
                 connection *conn = (connection *)connPtr;
                 if (conn == nullptr) continue;
                 else {
+                    memset(&msg, 0, msgLen);
                     memset(buf, 0, 2048);
-                    int len = Read(conn->getFd(), buf, 2048);
+                    int len = Read(conn->getFd(), &msg, msgLen);
                     if (len <= 0) {
                         conn->setFlag(ZERO);
                         close(conn->getFd());
                         m_connSum--;
                         LOG_DEBUG("fd = %d, close, sum = %ld", conn->getFd(), m_connSum);    
                     }
-                    else
-                        LOG_DEBUG("fd = %d, sum = %ld, recv = %s", conn->getFd(), m_connSum, buf);
+                    else {
+                        int len2 = msg.msgLen - msgLen;
+                        LOG_DEBUG("fd = %d, type = %0x, len= %d, last = %d", conn->getFd(), msg.msgType, msg.msgLen, len2);
+                        int len3 = Read(conn->getFd(), buf, len2);
+                        LOG_DEBUG("fd = %d, len3 = %ld, recv = %s", conn->getFd(), len3, buf);
+                    }
                 }
             }
         }

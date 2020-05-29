@@ -1,5 +1,4 @@
 #pragma once 
-#include "../comm/unp.h"
 #include "../communicate.h"
 
 int
@@ -21,9 +20,11 @@ cli_main(int argc, char** argv)
     servaddr.sin_port = htons(TESTPORT);
     Inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
 
-    Connect(sockfd, (SA *)&servaddr, sizeof(servaddr));
+    //Connect(sockfd, (SA *)&servaddr, sizeof(servaddr));
+    char buffContent[512] = "{\"dwVersion\": 20180613,\"ddwShareId\": 10030,\"strShareEffTimeDesc\": \"活动截止时间：2021/04/10 12:12:55\",\"cShareEffTimeDesc_u\": 1}";
     
-    str_cli(stdin, sockfd);
+    //str_cli(stdin, sockfd);
+    writeMsg(sockfd, REQUESE1, buffContent, strlen(buffContent));
     
     sleep(1);
     Close(sockfd);
