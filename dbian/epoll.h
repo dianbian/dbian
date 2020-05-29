@@ -5,7 +5,8 @@
 
 #include "comm/unp.h"
 #include "connection.h"
-
+#include "msg.h"
+#include "socket.h"
 
 class epoll {
 private:
@@ -16,6 +17,8 @@ private:
     char m_buff[MAXLINE];
     epoll_event *m_evt;
     std::vector<connection *> m_connVec;    //重复利用 初始1024
+    //TODO
+    //std::map<int, connection *> m_connMap;  //加速查找
     size_t m_connSum;   //实际有效连接
 public:
     epoll(size_t nSize = LISTENQ) {
@@ -86,7 +89,6 @@ public:
         event.events = EPOLLIN | EPOLLET;
         event.data.ptr = conn;
         setnonblocking(fd);
-    
         //epoll_ctl(int epfd,int op,int fd,struct epoll_event *event);
         int ret = epoll_ctl(m_epollFd, EPOLL_CTL_ADD, fd, &event);
         if (ret < 0) {
@@ -167,6 +169,7 @@ public:
                 return conn;
         }
     }
+
     void dealHandle() {
         char buf[2048];
         msgHeader msg;

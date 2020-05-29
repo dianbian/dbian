@@ -83,7 +83,7 @@ writeMsg(int sockFd, size_t type, const char* buf, size_t len) {
     memcpy(sendLine, &msgh, msgLen);
     memcpy(sendLine + msgLen, buf, len);
     printf("%s\n", sendLine);
-    writen(sockFd, sendLine, strlen(sendLine));
+    writen(sockFd, sendLine, msgh.msgLen);
     return len;
 }
 
