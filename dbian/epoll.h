@@ -191,8 +191,9 @@ public:
                 continue;
             }
             guardMutex gm(&m_mutex);
-            if (m_connEv.size() == ZERO) {
-                list.swap(m_connEv);    //消耗应该很小吧?
+            if (list.size() > 0 && m_connEv.size() == ZERO) {
+                m_connEv.swap(list);    //消耗应该很小吧?
+                pthread_cond_signal(&m_cond);
             }
         }
     }
@@ -208,8 +209,9 @@ public:
                 if (conn == nullptr) continue;
                 else {
                     memset(m_msgBuff, 0, MSGLEN);                    
-                    int len = conn->getMsg(m_msgBuff, m_type, MSGLEN);
-                    LOG_DEBUG("fd = %d, type = %0x, len= %d, buf = %s", conn->getFd(), m_type, len, m_msgBuff);
+                    int len1 = conn->readMsg();
+                    int len2 = conn->getMsg(m_msgBuff, m_type, MSGLEN);
+                    LOG_DEBUG("fd = %d, type = %0x, len1= %d, len1= %d, buf = %s", conn->getFd(), m_type, len1, len2, m_msgBuff);
                 }
             }
             std::vector<uintptr_t> tmpVec;

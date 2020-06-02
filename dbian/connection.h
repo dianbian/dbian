@@ -6,6 +6,7 @@
 #include "comm/linkedList.h"
 #include "comm/unp.h"
 #include "msg.h"
+#include "communicate.h"
 
 class connection
 {
@@ -87,13 +88,13 @@ public:
         for (size_t i = 0; i < blockSize; ++i) {
             pNode p = m_recvBuf.getNodeNull();
             p->data.type = msg.msgType;
-            p->data.index = i + 1;
+            p->data.index = i;  //从0开始 max(i) + 1 == blockSize
             p->data.idSum = blockSize;
             memset(p->data.data, 0, DATALENGTH);
             if (i + 1 == blockSize) {   //特殊处理, 长度也特殊
                 msgLen = readn(m_fd, p->data.data, m_msgLen - (i * DATALENGTH));
                 p->data.len = m_msgLen - (i * DATALENGTH);
-                printf("xxxxxxxxx, %d, %lu\n", msgLen, i);
+                printf("xxxxxxxxx, %d, %lu, index= %lu, idSum = %lu\n", msgLen, i, p->data.index, p->data.idSum);
             }
             else {
                 p->data.len = DATALENGTH;
@@ -110,17 +111,23 @@ public:
         size_t i = 0;
         m_recvBuf.setTail(m_recvBuf.getHead());   //中位指针回溯
         do {
-            pNode p = m_recvBuf.getNode();
+            pNode p = m_recvBuf.getNode();  //理论上不会null
+            if (p == nullptr) {
+                printf("continue   \n");
+                continue;
+            }
             if (p->data.index + 1 == p->data.idSum) {   //特殊
                 memcpy(buff + len, p->data.data, p->data.len);   //拷贝指针偏移
                 len += p->data.len;
+                p->data.len = 0;
                 printf("mmmmmmmmmmmmmmm, %lu, %lu\n", len, i);
                 break;
             }
-            printf("ooooooooooooooooo, %lu, %lu\n", len, i);
+            printf("rrrrrrr, %lu, len =%lu, index= %lu, idSum = %lu\n", i, len, p->data.index, p->data.idSum);
             memcpy(buff + len, p->data.data, p->data.len);
             len += p->data.len;
-            if (maxSize < len)
+            p->data.len = 0;
+            if (maxSize < len)  //TODO  danger
                 break;
             i++;
         }while(1);  //一直读 index + 1 == idSum break

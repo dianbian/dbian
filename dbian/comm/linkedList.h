@@ -129,7 +129,7 @@ public:
     T* getNode() {
         while (m_middle) {
             if (m_middle->data.len != 0) {  //寻找非空对象
-                m_middle->data.len = 0;
+                //m_middle->data.len = 0;   //外部调用赋值
                 m_len--;
                 //__sync_sub_and_fetch(&m_len, 1);
                 //m_middle = m_middle->pNext;   //todo

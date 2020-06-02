@@ -113,6 +113,7 @@ public:
                 pthread_cond_wait(&m_cond, &m_mutex);
             }
             pNode node = m_comsume.getNode();
+            node->data.len = 0;
             if (node == nullptr) {
                 continue;
             }
