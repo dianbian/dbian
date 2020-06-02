@@ -11,42 +11,22 @@
 #define DATALENGTH 2020
 #define LISTLEN 50
 
-typedef struct data {
-    size_t len;     //日志里面特定长度，在con里也是长度
-    size_t index;   //起始index 一个index + 1 == sum 终止
-    size_t idSum;   //总数
-    char data[DATALENGTH];  //if input size > DATALENGTH, malloc
-}dataNode;
-
-typedef struct node {
-    struct node *pPrev;
-    struct node *pNext;
-    dataNode data;
-}List, *pNode;
-
-
+template<typename T>
 class linkedList {
 private:
-    pNode m_head;
-    pNode m_middle;
-    pNode m_tail;
+    T* m_head;
+    T* m_middle;
+    T* m_tail;
     size_t m_len;
 
-    pNode& getHead() {
-        return m_head;
+    void setHead(T* head) {
+        m_head = head;
     }
 
-    pNode& getTail() {
-        return m_tail;
-    }
-
-    pNode InitNode() {
-        pNode node = (pNode)malloc(sizeof(List));
+    T* InitNode() {
+        T *node = (T *)malloc(sizeof(T));
         node->pPrev = nullptr;
         node->pNext = nullptr;
-        node->data.index = 0;
-        node->data.idSum = 0;
-        node->data.len = 0;
         return node; 
     }
 
@@ -70,6 +50,14 @@ public:
         return m_len;
     }
 
+    T* getHead() {
+        return m_head;
+    }
+ 
+    T* getTail() {
+        return m_tail;
+    }
+
     void initList(size_t nSize = LISTLEN) {
         if (m_head == nullptr) {    //do not memset
             m_head = InitNode();
@@ -80,13 +68,13 @@ public:
             m_tail->pNext = nullptr;
         }
         for (size_t i = 0; i < nSize; ++i) {
-            pNode node = InitNode();
+            T* node = InitNode();
             insertList(node);
         }
     }
 
-    bool insertList(pNode node) {
-        pNode p = m_tail;
+    bool insertList(T* node) {
+        T* p = m_tail;
         if (node == nullptr) {
             node = InitNode();
         }
@@ -97,8 +85,8 @@ public:
         return true;
     }
 
-    bool insertList(const char* str) {
-        pNode p = m_head;
+    bool insertList(const char* str) {  //TODO 不够统一DATALENGTH
+        T* p = m_head;
         size_t len = strlen(str) > DATALENGTH ? DATALENGTH : strlen(str);
         while (p) {
             if (p->data.len == 0) {
@@ -111,7 +99,7 @@ public:
             }
             p = p->pNext;
         }
-        pNode node = InitNode();
+        T* node = InitNode();
         memcpy(node->data.data, str, len);
         node->data.data[len] = '\0';
         node->data.len = len;
@@ -132,15 +120,15 @@ public:
     void freeList() {
         printf("\n\n");
         while (m_head) {
-            pNode p = m_head;
+            T* p = m_head;
             free(p);
             m_head = m_head->pNext;
         }
     }
 
-    const pNode getNode() {
+    T* getNode() {
         while (m_middle) {
-            if (m_middle->data.len != 0) {
+            if (m_middle->data.len != 0) {  //寻找非空对象
                 m_middle->data.len = 0;
                 m_len--;
                 //__sync_sub_and_fetch(&m_len, 1);
@@ -152,15 +140,32 @@ public:
         return nullptr;
     }
 
+    T* getNodeNull() {
+        while (m_middle) {
+            if (m_middle->data.len == 0) {  //寻找空对象
+                m_len++;
+                return m_middle;    //TODO 位移
+            }
+            m_middle = m_middle->pNext;
+        }
+        T* node = InitNode();
+        insertList(node);
+        return node;
+    }
+
     void swapList(linkedList& llist) {
-        pNode p = llist.getHead();
-        pNode q = llist.getTail();
-        llist.getHead() = m_head;
-        llist.getTail() = m_tail;
+        T* p = llist.getHead();
+        T* q = llist.getTail();
+        llist.setHead(m_head);
+        llist.setTail(m_tail);
         m_head = p;
         m_tail = q;
         m_middle = p;   //特有
         m_len = llist.getSize();
         llist.setSize(0);        
+    }
+
+    void setTail(T* head) {
+        m_middle = head;
     }
 };

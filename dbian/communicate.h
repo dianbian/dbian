@@ -76,12 +76,12 @@ writeMsg(int sockFd, size_t type, const char* buf, size_t len) {
         return -1;
     msgHeader msgh;
     msgh.msgType = type;
-    msgh.msgLen = msgLen + len;
-    printf("%0x, len = %lu, bufflen = %lu, msglen = %d\n", msgh.msgType, msgLen, len, msgh.msgLen);
+    msgh.msgLen = HEADLEN + len;
+    printf("%0x, len = %lu, bufflen = %lu, msglen = %d\n", msgh.msgType, HEADLEN, len, msgh.msgLen);
     char sendLine[MAXLINE], recvLine[MAXLINE];
     //snprintf(sendLine, "%s%s", &msgh, buf, msgh.msgLen);
-    memcpy(sendLine, &msgh, msgLen);
-    memcpy(sendLine + msgLen, buf, len);
+    memcpy(sendLine, &msgh, HEADLEN);
+    memcpy(sendLine + HEADLEN, buf, len);
     printf("%s\n", sendLine);
     writen(sockFd, sendLine, msgh.msgLen);
     return len;

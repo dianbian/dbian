@@ -11,8 +11,19 @@
 
 class log {
 private:
-    linkedList m_produce;
-    linkedList m_comsume;
+    typedef struct data {
+        size_t len;     //日志里面特定长度，在con里也是长度
+        char data[DATALENGTH];  //if input size > DATALENGTH, TODO
+    }dataNode;
+
+    typedef struct node {
+        struct node *pPrev;
+        struct node *pNext;
+        dataNode data;
+    }List, *pNode;
+
+    linkedList<List> m_produce;
+    linkedList<List> m_comsume;
     std::string m_fileName;
     std::string m_filePath;
     FILE *m_fp;

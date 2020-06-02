@@ -5,26 +5,35 @@
 
 #include "comm/unp.h"
 #include "connection.h"
-#include "msg.h"
 #include "socket.h"
+
+#define MSGLEN MAXBUFF * MAXBUFF
 
 class epoll {
 private:
     int m_epollFd;
     int m_listenFd;
+    size_t m_type;
     struct sockaddr_in m_addr;
     socklen_t m_len; 
-    char m_buff[MAXLINE];
     epoll_event *m_evt;
+    char m_buff[MAXLINE];
+    char m_msgBuff[MSGLEN];  //4M?
+    std::vector<uintptr_t> m_connEv;    //实际有效事件
     std::vector<connection *> m_connVec;    //重复利用 初始1024
     //TODO
     //std::map<int, connection *> m_connMap;  //加速查找
     size_t m_connSum;   //实际有效连接
+    pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER;  
+    pthread_cond_t m_cond = PTHREAD_COND_INITIALIZER;
+
 public:
     epoll(size_t nSize = LISTENQ) {
         m_epollFd = 0;
         m_listenFd = 0;
         m_connSum = 0;
+        pthread_mutex_init(&m_mutex, NULL);
+	    pthread_cond_init(&m_cond, NULL);
         for (size_t i = 0; i < nSize; ++i) {
             connection *cc = new connection();
             m_connVec.push_back(cc);
@@ -32,6 +41,8 @@ public:
     }
 
     ~epoll() {    
+        pthread_mutex_destroy(&m_mutex);
+	    pthread_cond_destroy(&m_cond);
     }
     
     bool initialize() {
@@ -117,6 +128,7 @@ public:
             return false;
         }
         LOG_DEBUG("nfds = %d epoll event", nfds);
+        //TODO 拆分线程accpet
         for (int i = 0; i < nfds; ++i) {
             if ((m_evt[i].events & EPOLLERR) || (m_evt[i].events & EPOLLHUP) ||  
               (!(m_evt[i].events & EPOLLIN))) {
@@ -171,41 +183,49 @@ public:
     }
 
     void dealHandle() {
-        char buf[2048];
-        msgHeader msg;
         m_evt = new epoll_event[LISTENQ];
         while (1) {
             std::vector<uintptr_t> list;
-            if (waitFd(list) == 0) {
+            if (waitFd(list) == ZERO) {
+                sleep(1);
                 continue;
             }
-            for (auto &connPtr : list) {
-                connection *conn = (connection *)connPtr;
-                if (conn == nullptr) continue;
-                else {
-                    memset(&msg, 0, msgLen);
-                    memset(buf, 0, 2048);
-                    int len = Read(conn->getFd(), &msg, msgLen);
-                    if (len <= 0) {
-                        conn->setFlag(ZERO);
-                        close(conn->getFd());
-                        m_connSum--;
-                        LOG_DEBUG("fd = %d, close, sum = %ld", conn->getFd(), m_connSum);    
-                    }
-                    else {
-                        int len2 = msg.msgLen - msgLen;
-                        LOG_DEBUG("fd = %d, type = %0x, len= %d, last = %d", conn->getFd(), msg.msgType, msg.msgLen, len2);
-                        int len3 = Read(conn->getFd(), buf, len2);
-                        LOG_DEBUG("fd = %d, len3 = %ld, recv = %s", conn->getFd(), len3, buf);
-                    }
-                }
+            guardMutex gm(&m_mutex);
+            if (m_connEv.size() == ZERO) {
+                list.swap(m_connEv);    //消耗应该很小吧?
             }
         }
     }
 
-    static void *runTask(void *arg) {
+    void dealMsg() {
+        while (1) {
+            guardMutex gm(&m_mutex);
+            if (m_connEv.size() == ZERO) {
+                pthread_cond_wait(&m_cond, &m_mutex);
+            }
+            for (auto &connPtr : m_connEv) {
+                connection *conn = (connection *)connPtr;
+                if (conn == nullptr) continue;
+                else {
+                    memset(m_msgBuff, 0, MSGLEN);                    
+                    int len = conn->getMsg(m_msgBuff, m_type, MSGLEN);
+                    LOG_DEBUG("fd = %d, type = %0x, len= %d, buf = %s", conn->getFd(), m_type, len, m_msgBuff);
+                }
+            }
+            std::vector<uintptr_t> tmpVec;
+            m_connEv.swap(tmpVec);
+        }
+    }
+
+    static void *dealEpoll(void *arg) {
         epoll *tmp = (epoll*)arg;
         tmp->dealHandle();
+        return nullptr;
+    }
+
+    static void *dealMsg(void *arg) {
+        epoll *tmp = (epoll*)arg;
+        tmp->dealMsg();
         return nullptr;
     }
 };

@@ -315,6 +315,10 @@ void epollFunc()
     if (!ep->initialize())
         return;
     thread el("epoll");
-    el.setRouter(epoll::runTask, ep);
+    el.setRouter(epoll::dealEpoll, ep);
     el.run();
+
+    thread emsg("emsg");
+    emsg.setRouter(epoll::dealMsg, ep);
+    emsg.run();
 }

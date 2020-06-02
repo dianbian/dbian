@@ -8,7 +8,7 @@ typedef struct {
     unsigned int msgLen;    //4294967295
 } msgHeader;
 
-size_t msgLen = sizeof(msgHeader);
+#define HEADLEN sizeof(msgHeader)
 
 enum {
     REQUESE1 = 0x5321,
