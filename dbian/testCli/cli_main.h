@@ -24,9 +24,15 @@ cli_main(int argc, char** argv)
     char buffContent[512] = "{\"dwVersion\": 20180613,\"ddwShareId\": 10030,\"strShareEffTimeDesc\": \"活动截止时间：2021/04/10 12:12:55\",\"cShareEffTimeDesc_u\": 1}";
     
     //str_cli(stdin, sockfd);
+    char recvLine[MAXLINE];
+    int type;
+    int len;
     while(1) {
         writeMsg(sockfd, REQUESE1, buffContent, strlen(buffContent));  
         sleep(1);
+        readMsg(sockfd, type, recvLine, len);
+        printf("len = %d, type = %0x, buff = %s\n", len, type, recvLine);
+        break;
     }
 
     sleep(10);

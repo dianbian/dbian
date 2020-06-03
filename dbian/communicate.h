@@ -87,6 +87,17 @@ writeMsg(int sockFd, size_t type, const char* buf, size_t len) {
     return len;
 }
 
+int readMsg(int sockFd, int& type, char* buf, int& len) {
+    msgHeader msg;
+    int headLen = readn(sockFd, &msg, HEADLEN);
+    if (headLen != HEADLEN)   //固定长度
+        return LOSSONE;
+    int msgLen = msg.msgLen - HEADLEN;
+    type = msg.msgType;
+    len = readn(sockFd, buf, msgLen); //i < blockSize
+    return len;
+}
+
 void
 str_cli(FILE *fp, int sockFd)
 {

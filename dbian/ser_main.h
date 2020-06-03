@@ -314,9 +314,6 @@ void epollFunc()
     epoll *ep = new epoll();
     if (!ep->initialize())
         return;
-    thread el("epoll");
-    el.setRouter(epoll::dealEpoll, ep);
-    el.run();
 
     thread emsg("emsg");
     emsg.setRouter(epoll::dealMsg, ep);

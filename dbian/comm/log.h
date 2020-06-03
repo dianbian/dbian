@@ -8,6 +8,7 @@
 
 #define MAXCHAIN 50
 #define ZERO    0
+#define LOSSONE -1
 
 class log {
 private:

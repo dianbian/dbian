@@ -30,6 +30,8 @@
 #define MAXBUFF 2048
 #define TESTPORT 13579
 
+#define MSGLEN MAXBUFF * MAXBUFF
+ 
 #define DATE_FORMAT "%Y-%m-%d %H:%M:%S"
 
 #define SA struct sockaddr  //common use, switch with struct sockaddr_in
