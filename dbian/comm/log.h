@@ -119,7 +119,7 @@ public:
                 continue;
             }
             writelog(node->data.data);
-            printf("%s", node->data.data);
+            //printf("%s", node->data.data);
             //pthread_mutex_unlock(&m_mutex);
         }
     }

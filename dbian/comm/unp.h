@@ -66,6 +66,7 @@ void LogDebug(int iLine, const char *pFunc, const char *format, ...) {
     gettimeofday(&tv, NULL);
     strftime(buffData, sizeof(buffData), DATE_FORMAT, localtime(&tv.tv_sec));
     snprintf(buffer, sizeof(buffer), "[%s %ld] #DEBUG# %02d %s %s \n", buffData, tv.tv_sec*1000 + tv.tv_usec/1000, iLine, pFunc, buffCont);
+    printf("%s", buffer);
     log::getInstance()->produce(buffer);
 }
 
@@ -86,6 +87,7 @@ void LogError(int iLine, const char *pFunc, const char *format, ...) {
     gettimeofday(&tv, NULL);
     strftime(buffData, sizeof(buffData), DATE_FORMAT, localtime(&tv.tv_sec));
     snprintf(buffer, sizeof(buffer), "[%s %ld] #ERROR# %02d %s %s %s \n", buffData, tv.tv_sec*1000 + tv.tv_usec/1000, iLine, pFunc, buffCont, strerror(errno_save));
+    printf("%s", buffer);
     log::getInstance()->produce(buffer);
 }
 

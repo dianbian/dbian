@@ -21,7 +21,7 @@ cli_main(int argc, char** argv)
     Inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
 
     Connect(sockfd, (SA *)&servaddr, sizeof(servaddr));
-    char buffContent[512] = "{\"dwVersion\": 20180613,\"ddwShareId\": 10030,\"strShareEffTimeDesc\": \"活动截止时间：2021/04/10 12:12:55\",\"cShareEffTimeDesc_u\": 1}";
+    char buffContent[512] = "{\"dwVersion\": 20180613,\"ddwShareId\": 10030,\"stsc\": \"entime：2021/04/10 12:12:55\",\"cc_u\": 1}";
     
     //str_cli(stdin, sockfd);
     char recvLine[MAXLINE];
@@ -32,7 +32,6 @@ cli_main(int argc, char** argv)
         sleep(1);
         readMsg(sockfd, type, recvLine, len);
         printf("len = %d, type = %0x, buff = %s\n", len, type, recvLine);
-        break;
     }
 
     sleep(10);

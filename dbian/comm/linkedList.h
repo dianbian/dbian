@@ -18,9 +18,14 @@ private:
     T* m_middle;
     T* m_tail;
     size_t m_len;
+    //TODO 总长度
 
     void setHead(T* head) {
         m_head = head;
+    }
+
+    void setTail(T* tail) {
+        m_tail = tail;
     }
 
     T* InitNode() {
@@ -165,7 +170,7 @@ public:
         llist.setSize(0);        
     }
 
-    void setTail(T* head) {
+    void setMiddle(T* head) {
         m_middle = head;
     }
 };

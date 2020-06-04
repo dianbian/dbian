@@ -68,22 +68,21 @@ readline(int sockFd, void *vptr, size_t maxLen)
     return n;
 }
 
-int 
-writeMsg(int sockFd, size_t type, const char* buf, size_t len) {
+int writeMsg(int sockFd, int type, const char* buf, size_t len) {
     if (len != strlen(buf))
         return -1;
     if (len <= 0)
         return -1;
     msgHeader msgh;
-    msgh.msgType = type;
-    msgh.msgLen = HEADLEN + len;
-    printf("%0x, len = %lu, bufflen = %lu, msglen = %d\n", msgh.msgType, HEADLEN, len, msgh.msgLen);
+    msgh.msgType = htons(type);
+    msgh.msgLen = htonl(HEADLEN + len);
+    printf("type = %0x, len = %lu, bufflen = %lu, msglen = %lu\n", type, HEADLEN, len, len + HEADLEN);
     char sendLine[MAXLINE], recvLine[MAXLINE];
     //snprintf(sendLine, "%s%s", &msgh, buf, msgh.msgLen);
     memcpy(sendLine, &msgh, HEADLEN);
     memcpy(sendLine + HEADLEN, buf, len);
     printf("%s\n", sendLine);
-    writen(sockFd, sendLine, msgh.msgLen);
+    writen(sockFd, sendLine, HEADLEN + len);
     return len;
 }
 
@@ -91,9 +90,9 @@ int readMsg(int sockFd, int& type, char* buf, int& len) {
     msgHeader msg;
     int headLen = readn(sockFd, &msg, HEADLEN);
     if (headLen != HEADLEN)   //固定长度
-        return LOSSONE;
-    int msgLen = msg.msgLen - HEADLEN;
-    type = msg.msgType;
+        return -1;
+    int msgLen = ntohl(msg.msgLen) - HEADLEN;
+    type = ntohs(msg.msgType);
     len = readn(sockFd, buf, msgLen); //i < blockSize
     return len;
 }
