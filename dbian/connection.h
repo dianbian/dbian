@@ -32,6 +32,7 @@ private:
     int m_msgLen;   //内容长
     linkedList<List> m_recvBuf;   //收队列
     linkedList<List> m_sendBuf;   //发队列
+    bool m_isSend;  //是否发送过注册或修改
     struct sockaddr_in m_cliAddr;
     char m_buff[MAXLINE];
     char m_msgSend[MSGLEN];  //4M?
@@ -40,6 +41,7 @@ public:
     connection() {
         m_fd = ZERO;
         m_flag = ZERO;
+        m_isSend = false;
         m_recvBuf.initList();
         m_sendBuf.initList();
     }
@@ -51,6 +53,14 @@ public:
     }
     
     ~connection() {
+    }
+
+    bool getSendFlag() {
+        return m_isSend;
+    }
+
+    void setSendFlag(bool flag) {
+        m_isSend = flag;
     }
 
     bool getFlag() {

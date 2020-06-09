@@ -133,6 +133,6 @@ int initTcpSocket(const char* ip, int port) {
     if (ret < 0) {
         return -1;
     }
-    LOG_DEBUG("liste on %s, %d", ip, port);
+    LOG_DEBUG("liste on %s, %d, on fd = %d", ip, port, listenfd);
     return listenfd;
 }

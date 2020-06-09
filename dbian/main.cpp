@@ -31,6 +31,12 @@ int main(int argc, char** argv)
     wmsg.setRouter(epoll::dealSend, ep);
     wmsg.run();
 
-    ep->loop();
+    thread epoll("epoll");
+    epoll.setRouter(epoll::dealEpoll, ep);
+    epoll.run();
+
+    while(1) {
+        sleep(1);
+    }
 
 }

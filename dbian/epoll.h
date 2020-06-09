@@ -56,15 +56,12 @@ public:
         if (m_epollRecvFd < 0)
             return false;
         m_epollSendFd = epoll_create(1);
-        if (m_epollRecvFd < 0)
+        if (m_epollSendFd < 0)
             return false;
         struct sockaddr_in m_servAddr;
-        connection *conn = new connection(m_listenFd, 1, m_servAddr);
         if (!addFd(m_epollRecvFd, m_listenFd)) {
-            delete conn;
             return false;
         }
-        m_connVec.push_back(conn);
         m_connSum++;
         return true;
     }
@@ -76,19 +73,23 @@ public:
         return;
     }
 
-    void resetConnection(int epollfd, int fd, connection *conn, int flag) {
+    bool resetConnection(int epollfd, int fd, connection *conn, int flag) {
         struct epoll_event event;
         event.data.fd = fd;
         event.events = EPOLLET | EPOLLONESHOT | flag;
         event.data.ptr = conn;
-        epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
+        int ret = epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
+        if (ret < 0) {
+            return false;
+        }
+        return true;
     }
 
     bool addFd(int epollfd, int fd) {
-        //定义事件
+        //不能将监听端口listenfd设置为EPOLLONESHOT否则会丢失客户连接
         struct epoll_event event;
         event.data.fd = fd;
-        event.events = EPOLLET | EPOLLONESHOT | EPOLLIN;
+        event.events = EPOLLET | EPOLLIN;
         setnonblocking(fd);
         //epoll_ctl(int epfd,int op,int fd,struct epoll_event *event);
         int ret = epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event);
@@ -99,7 +100,6 @@ public:
     }
 
     bool addConnetion(int epollfd, int fd, connection *conn, int flag) {
-        //定义事件
         struct epoll_event event;
         event.data.fd = fd;
         event.events = EPOLLET | EPOLLONESHOT | flag;
@@ -108,8 +108,7 @@ public:
         //epoll_ctl(int epfd,int op,int fd,struct epoll_event *event);
         int ret = epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event);
         if (ret < 0) {
-            LOG_DEBUG("epoll ctl fd error");
-            exit(0);
+            LOG_ERROR("epoll ctl fd error");
             return false;
         }
         return true;
@@ -118,8 +117,7 @@ public:
     bool delFd(int epollfd, int fd) {
         int ret = epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, NULL);
         if (ret < 0) {
-            LOG_DEBUG("epoll ctl fd error");
-            exit(0);
+            LOG_ERROR("epoll ctl fd error");
             return false;
         }
         return true;
@@ -128,23 +126,29 @@ public:
     
     size_t waitRecvFd(std::vector<uintptr_t> &list, int ms_timeout = -1) {
         //int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
+        memset(m_evtRecv, 0, LISTENQ * sizeof(epoll_event));
         int nfds = epoll_wait(m_epollRecvFd, m_evtRecv, LISTENQ, ms_timeout);
         if (nfds <= 0) {
-            return false;
+            return ZERO;
         }
         LOG_DEBUG("nfds = %d epoll event", nfds);
         //TODO 拆分线程accpet
         for (int i = 0; i < nfds; ++i) {
+            LOG_DEBUG("EPOLLIN ,fd = %d, ev=%d", m_evtRecv[i].data.fd, m_evtRecv[i].events);
             if ((m_evtRecv[i].events & EPOLLERR) || (m_evtRecv[i].events & EPOLLHUP) ||  
               (!(m_evtRecv[i].events & EPOLLIN))) {
-                LOG_DEBUG("EPOLLERR");
+                LOG_ERROR("EPOLLERR");
                 continue;
             }
-            else if (m_evtRecv[i].data.fd == m_listenFd)
+            else if (m_evtRecv[i].data.fd == m_listenFd) {
                 accept();
+                continue;
+            }
             else if ((m_evtRecv[i].events & EPOLLIN) || (m_evtRecv[i].events & EPOLLPRI)) {
-                LOG_DEBUG("EPOLLIN");
                 list.push_back((uintptr_t)m_evtRecv[i].data.ptr);
+            }
+            else{
+                LOG_ERROR("EPOLLIN ,fd = %d", m_evtRecv[i].data.fd);
             }
         }
         return list.size();
@@ -204,8 +208,8 @@ public:
 
     void loop() {   //主循环处理接受
         m_evtRecv = new epoll_event[LISTENQ];
+        std::vector<uintptr_t> list;
         while (1) {
-            std::vector<uintptr_t> list;
             if (waitRecvFd(list) == ZERO) {
                 sleep(1);
                 continue;
@@ -260,15 +264,25 @@ public:
         return 0;
     }
 
+    //close();
+
     int sendMsg(connection *conn, const char* buff, size_t type, size_t len) {
         LOG_DEBUG("fd = %d, type = %0x, len= %d, buf = %s", conn->getFd(), type, len, buff);
         if (conn == nullptr)
             return -1;
         int retLen = conn->sendMsg(buff, type, len);
+        bool isRegist = false;
         if (retLen == (int)len) {
             //add Fd
             LOG_DEBUG("ttttttttttttttt");
-            addConnetion(m_epollSendFd, conn->getFd(), conn, EPOLLOUT);
+            if (conn->getSendFlag() == false) 
+                isRegist = addConnetion(m_epollSendFd, conn->getFd(), conn, EPOLLOUT);
+            else
+                isRegist = resetConnection(m_epollSendFd, conn->getFd(), conn, EPOLLOUT);
+            if (isRegist)
+                conn->setSendFlag(true);
+            else
+                ;//close()
         }
         return retLen;
     }
@@ -278,7 +292,6 @@ public:
         while (1) {
             std::vector<uintptr_t> list;
             if (waitSendFd(list) == ZERO) {
-                sleep(1);
                 continue;
             }
             LOG_DEBUG("size = %lu", list.size());
@@ -288,11 +301,17 @@ public:
                 else {
                     int len1 = conn->writeMsg();
                     LOG_DEBUG("len = %lu", len1);
-                    delFd(m_epollSendFd, conn->getFd());
+                    //delFd(m_epollSendFd, conn->getFd());
                 }
             }
         }
         return;
+    }
+
+    static void *dealEpoll(void *arg) {
+        epoll *tmp = (epoll*)arg;
+        tmp->loop();
+        return nullptr;
     }
 
     static void *dealMsg(void *arg) {

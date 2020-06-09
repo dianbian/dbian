@@ -28,9 +28,10 @@ cli_main(int argc, char** argv)
     int type;
     int len;
     while(1) {
+        sleep(10);
         writeMsg(sockfd, REQUESE1, buffContent, strlen(buffContent));  
-        sleep(1);
         readMsg(sockfd, type, recvLine, len);
+        sleep(1);
         printf("len = %d, type = %0x, buff = %s\n", len, type, recvLine);
     }
 
