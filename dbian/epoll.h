@@ -59,7 +59,7 @@ public:
         if (m_epollSendFd < 0)
             return false;
         struct sockaddr_in m_servAddr;
-        if (!addFd(m_epollRecvFd, m_listenFd)) {
+        if (!addConnetion(m_epollRecvFd, m_listenFd, nullptr, EPOLLIN)) {
             return false;
         }
         m_connSum++;
@@ -102,9 +102,11 @@ public:
     bool addConnetion(int epollfd, int fd, connection *conn, int flag) {
         struct epoll_event event;
         event.data.fd = fd;
-        event.events = EPOLLET | EPOLLONESHOT | flag;
-        event.data.ptr = conn;
+        //event.events = EPOLLET | EPOLLONESHOT | flag;
+        event.events = EPOLLET | EPOLLIN;
+        event.data.ptr = 0;
         setnonblocking(fd);
+        LOG_DEBUG("xxxxx ,fd = %d, ev=%0x", fd, event.events);
         //epoll_ctl(int epfd,int op,int fd,struct epoll_event *event);
         int ret = epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event);
         if (ret < 0) {
@@ -117,7 +119,7 @@ public:
     bool delFd(int epollfd, int fd) {
         int ret = epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, NULL);
         if (ret < 0) {
-            LOG_ERROR("epoll ctl fd error");
+            LOG_ERROR("epoll ctl fd error"); 
             return false;
         }
         return true;
@@ -134,7 +136,7 @@ public:
         LOG_DEBUG("nfds = %d epoll event", nfds);
         //TODO 拆分线程accpet
         for (int i = 0; i < nfds; ++i) {
-            LOG_DEBUG("EPOLLIN ,fd = %d, ev=%d", m_evtRecv[i].data.fd, m_evtRecv[i].events);
+            LOG_DEBUG("EPOLLIN ,fd = %d, ev=%0x", m_evtRecv[i].data.fd, m_evtRecv[i].events);
             if ((m_evtRecv[i].events & EPOLLERR) || (m_evtRecv[i].events & EPOLLHUP) ||  
               (!(m_evtRecv[i].events & EPOLLIN))) {
                 LOG_ERROR("EPOLLERR");
