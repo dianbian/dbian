@@ -7,5 +7,6 @@ if [ $1 ]; then
     if [ -f "$1" ]; then
         echo /home/bianzhenhua/go/bin/go run $1
         /home/bianzhenhua/go/bin/go run $1
+   #     /home/bianzhenhua/go/bin/go build $1
     fi
 fi
