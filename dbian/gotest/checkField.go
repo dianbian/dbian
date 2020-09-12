@@ -25,7 +25,7 @@ var mapNewSku map[int64]NewSku
 var mapSkuErp map[int64]SkuErp
 var mapNewSpu map[string]NewSpu
 
-var printlnlog bool
+var printlnlog int
 //包还要排序
 
 func SelectSkuFieldo(db *sql.DB, mapSku map[int64]SourceSku, skuVec [] int64)  {
@@ -231,7 +231,7 @@ func newSkuField(db *sql.DB, mapSku map[int64]NewSku, tablenum int)  [] int64 {
 	var areaStr string
 	skuVec := make([]int64, 10)
 	areaStr = "select " + NewSkuField + " from t_sku_" + strconv.FormatInt(int64(tablenum), 10)
-	fmt.Println(areaStr)
+	//fmt.Println(areaStr)
 	rows, err := db.Query(areaStr)
 	if err != nil{
 		fmt.Println("select fail [%s]",err)
@@ -376,14 +376,15 @@ func checkSku(db *sql.DB,sku SourceSku, newSku NewSku, mapArea map[string]SoureA
 		flag = true
 		fmt.Print(" ,Fplatformid=", sku.Fcooperatorid, newSku.Fplatformid)
 	}*/
-	if sku.Fpopskucode != newSku.Fskuextcode {
+	if sku.Fskulocalcode != newSku.Fskulocalcode {
+		flag = true
+		//fmt.Print(" ,Fskulocalcode=", sku.Fskulocalcode, newSku.Fskulocalcode)
+	}
+	/*if sku.Fpopskucode != newSku.Fskuextcode {
 		flag = true
 		fmt.Print(" ,Fpopskucode=", sku.Fpopskucode, newSku.Fskuextcode)
 	}
-	if sku.Fskulocalcode != newSku.Fskulocalcode {
-		flag = true
-		fmt.Print(" ,Fskulocalcode=", sku.Fskulocalcode, newSku.Fskulocalcode)
-	}
+	
 	if sku.Fskustate == 1 && 1 != newSku.Fskustate {
 		flag = true
 		fmt.Print(" ,Fskustate=", sku.Fskustate, newSku.Fskustate)
@@ -445,7 +446,7 @@ func checkSku(db *sql.DB,sku SourceSku, newSku NewSku, mapArea map[string]SoureA
 			fmt.Print(" ,Fskupurchpricev2=", mapSkuErp[sku.Fskuid].Fskupurchpricev2, newSku.Fskuerppurchprice)
 		}
 	}
-	if (sku.Fskureferprice * 100) != newSku.Fskuerpreferprice {
+	if sku.Fskureferprice != newSku.Fskuerpreferprice {
 		flag = true
 		fmt.Print(" ,Fskureferprice=", sku.Fskureferprice, newSku.Fskuerpreferprice)
 	}
@@ -476,9 +477,9 @@ func checkSku(db *sql.DB,sku SourceSku, newSku NewSku, mapArea map[string]SoureA
 	if sku.Fskulastdowntime != newSku.Fskulastdowntime {
 		flag = true
 		fmt.Print(" ,Fskulastdowntime=", sku.Fskulastuptime, newSku.Fskulastdowntime)
-	}
+	}*/
 	if flag {
-		fmt.Print("      ,Fskuid ", sku.Fskuid, "  spuid ",  sku.Fspuid)
+		fmt.Print(newSku.Fskuid, ",",  newSku.Fspuid)
 		fmt.Println("")
 	}
 }
@@ -736,17 +737,13 @@ func checkdata2(db *sql.DB, db2 *sql.DB, tablenum int) {
 				fmt.Println(skuKey, oldsku)
 			}
 		}
-		fmt.Println("sku     size=", len(mapOldSKu1))
-		fmt.Println("erp     size=", len(mapOldSkuErp))
-		fmt.Println("erp     size=", len(mapOldArea))
-		fmt.Println("newsku  size=", len(mapNewSku1))
-		break
 	}
 }
 
-func checkBrandname(url string, token string) {
-	resDat := getUrl(url, token)
+func checkBrandname(url1 string, url2 string, token string) {
+	resDat := getUrl(url1, token, 0)
 	realTotal := resDat.Content.Result.RealTotal
+	scrollId := resDat.Content.Result.ScrollId
 	fmt.Println(realTotal)
 	list := resDat.Content.Result.List
 	sum := 0
@@ -768,8 +765,8 @@ func checkBrandname(url string, token string) {
 	var reqTime int
 	reqTime = int(realTotal / 100) + 1
 	for i := 0; i < reqTime; i++ {
-		//time.Sleep(time.Second * 1)
-		resDat := getUrl(url, token)
+		index := (i + 1) * 100
+		resDat := getUrl2(url2, token, scrollId, index)
 		list := resDat.Content.Result.List
 		for _, val := range list {
 			Fspuid :=  val.Fspuid
@@ -790,22 +787,176 @@ func checkBrandname(url string, token string) {
 	fmt.Println("sum =",  sum)	
 }
 
-func getUrl(url string, token string) ResData {
+func checkPackInfo(db *sql.DB, url1 string, url2 string, token string, tablenum int) {
+	var mapNewSku1 map[int64] string  
+	mapNewSku1 = make(map[int64] string)
+	var mapNewSku2 map[int64] string
+	mapNewSku2 = make(map[int64] string)
+
+	resDat := getUrl(url1, token, 0)
+	realTotal := resDat.Content.Result.RealTotal
+	scrollId := resDat.Content.Result.ScrollId
+	fmt.Println(realTotal)
+	fmt.Println(resDat)
+	list := resDat.Content.Result.List
+	sum := 0
+	for _, val := range list {
+		if len(val.Fpackinfolist) != 0 {
+			mapNewSku1[val.Fskuid] = val.Fspuid
+			sum++
+		}
+	}
+	var reqTime int
+	reqTime = int(realTotal / 100) + 1
+	for i := 0; i < reqTime; i++ {
+		index := (i + 1) * 100
+		resDat := getUrl2(url2, token, scrollId, index)
+		if printlnlog <= 2 {
+			fmt.Println(resDat)
+		}
+		list := resDat.Content.Result.List
+		for _, val := range list {
+			if len(val.Fpackinfolist) != 0 {
+				mapNewSku1[val.Fskuid] = val.Fspuid    //ES 有值
+				sum++
+			}
+		}
+	}
+	fmt.Println("sum =",  sum)
+	selectPackInfoField(db, mapNewSku2, tablenum)   //数据库中间标
+	fmt.Println("mapNewSku1 =",  len(mapNewSku1))
+	fmt.Println("mapNewSku2 =",  len(mapNewSku2))
+	for skuKey, _ := range mapNewSku1 {    // 数据库 > ES
+		_, ok := mapNewSku2[skuKey]
+		if !ok {
+			fmt.Println(mapNewSku1[skuKey], ",", skuKey)
+		} 
+	}
+}
+
+func selectPackInfoField(db *sql.DB, mapSku map[int64] string, tablenum int) {
+	for i := 0; i < tablenum; i++ {
+		var areaStr string
+		areaStr = "select Fspuid, Fskuid from t_sku_pack_info_" + strconv.FormatInt(int64(i), 10) 
+		fmt.Println(areaStr)
+		rows, err := db.Query(areaStr)
+		if err != nil {
+			fmt.Println("select fail [%s]",err)
+			return 
+		}
+		for rows.Next() {
+			var skuid int64
+			var spuid string
+			_, _ = rows.Columns()
+			err = rows.Scan(&spuid, &skuid)
+			if err != nil {
+				fmt.Println("selectPackInfoField info failed! [%s]", err)
+			}
+			mapSku[skuid] = spuid
+		}
+	}
+}
+
+func checkPack(db *sql.DB, db2 *sql.DB, tablenum int) {
+	var mapSku1 map[int64]int64
+	var mapSpu2 map[int64]string
+	mapSku1 = make(map[int64] int64)
+	mapSpu2 = make(map[int64] string)
+
+	var selectStr = "select Fskuid from t_sku_pack_info"
+	fmt.Println(selectStr);
+	rows, err := db.Query(selectStr)
+	if err != nil{
+		fmt.Println("select fail [%s]",err)
+		return
+	}
+	for rows.Next() {
+		var skuid int64 
+		_, _ = rows.Columns()
+		err = rows.Scan(&skuid)
+		if err != nil {
+			fmt.Println("Get sku info failed! [%s]", err)
+		}
+		mapSku1[skuid] = skuid
+	}
+
+	for i := 0; i < tablenum; i++ {
+		var areaStr string
+		areaStr = "select Fspuid, Fskuid from t_sku_pack_info_" + strconv.FormatInt(int64(i), 10) + ";"
+		fmt.Println(areaStr);
+		rows, err := db2.Query(areaStr)
+		if err != nil{
+			fmt.Println("select fail [%s]",err)
+			return
+		}
+		for rows.Next() {
+			var skuidSpu int64
+			var spuid string
+			_, _ = rows.Columns()
+			err = rows.Scan(&spuid, &skuidSpu)
+			if err != nil {	
+				fmt.Println("Get new sku info failed! [%s]", err)
+			}
+			mapSpu2[skuidSpu] = spuid
+		}
+	}
+	fmt.Println("oldskupack_info  size=", len(mapSku1))
+	fmt.Println("newsku_pack_info  size=", len(mapSpu2))
+	fmt.Println("desc  size=", len(mapSku1) - len(mapSpu2))
+	for skuidKey, _ := range mapSpu2 {
+		_, ok := mapSku1[skuidKey]
+		if !ok {
+			fmt.Println(mapSpu2[skuidKey], skuidKey)		
+		}
+	}
+}
+
+func getUrl(url1 string, token string, index int) ResData {
 	appcode := "ccss-sync-es"
-	var cfilter CFilter
-	cfilter.Fskuid = -1
+	var cfilter CNotAndFilter
+	cfilter.NotCond.Fskuid = -1
+	var centityid CAndFilter
+	centityid.AndCond.Fentityid = -1
 	esreq := &EsReq{}
 	esreq.AppCode = appcode
 	esreq.Token = token
-	esreq.Start = 0
-	esreq.Fls = "Fbrandname,Fspuid,Fbrandid,Ferpbrandid,Ferpbrandname"
+	esreq.Start = index
+	esreq.Fls = "Fbrandname,Fspuid,Fskuid,Fbrandid,Ferpbrandid,Ferpbrandname,Fpackinfolist"
 	esreq.Limit = 100
-	esreq.Filter = cfilter
+	esreq.Filter = centityid
+	esreq.Query = cfilter
+	esreq.ScrollIndex = true
+	esreq.WaitTime = 60
+	esreq.ScrollIndexSort = true
 	data, _ := json.Marshal(esreq)
-	allUrl := url + "?req=" + string(data)
-	if printlnlog == true {
+	allUrl := url1 + "?req=" + string(data)
+	if printlnlog <= 2 {
 		fmt.Println(allUrl)
-		printlnlog = false
+		printlnlog += 1
+	}
+	req, _ := http.NewRequest("GET", allUrl, nil)
+    res, _ := http.DefaultClient.Do(req)
+    defer res.Body.Close()
+    body, _ := ioutil.ReadAll(res.Body)
+
+	var resDat ResData
+	err := json.Unmarshal([]byte(body), &resDat)
+    if err != nil {
+        fmt.Println(resDat)
+	}
+	return resDat
+}
+
+func getUrl2(url2 string, token string, scrollId string, index int) ResData {
+	esreq := &EsReq2{}
+	esreq.Token = token
+	esreq.ScrollId = scrollId
+	esreq.WaitTime = 60
+	data, _ := json.Marshal(esreq)
+	allUrl := url2 + "?req=" + string(data)
+	if printlnlog <= 2 {
+		fmt.Println(allUrl)
+		printlnlog += 1
 	}
 	req, _ := http.NewRequest("GET", allUrl, nil)
     res, _ := http.DefaultClient.Do(req)
@@ -831,8 +982,10 @@ func main() {
 	var db *sql.DB
 	var db2 *sql.DB
 	var url string
+	var url2 string
 	var token string
-	printlnlog = true
+	var tablenum int
+	printlnlog = 0
 	if devIndex == 1 { //生产
 		db, _ = sql.Open("mysql", "goods:TxjstJdlx@tcp(172.25.0.152:3306)/commodity?charset=utf8")
 		if err := db.Ping(); err != nil {
@@ -847,6 +1000,8 @@ func main() {
 		}
 		url = "http://eaglepltapineibu.haiziwang.com/eagle-web/search/queryIndex.do"
 		token = "4dd40873-96e5-42d0-8a22-9d1f58ed4ee5"
+		url2 = "http://eaglepltapineibu.haiziwang.com/eagle-web/search/queryScrollIndex.do"
+		tablenum = 32
 	} else {	//测试
 		db, _ = sql.Open("mysql", "test_db:test_code@tcp(172.172.178.18:3309)/commodity?charset=utf8")
 		if err := db.Ping(); err != nil {
@@ -861,15 +1016,19 @@ func main() {
 		}
 		url = "http://test.eagleapi.haiziwang.com/eagle-web/search/queryIndex.do"
 		token = "d482b547-f4cb-48aa-b3a8-896fd14f59d0"
+		url2 = "http://test.eagleapi.haiziwang.com/eagle-web/search/queryScrollIndex.do"
+		tablenum = 2
 	}
 	fmt.Println("connect commodity_spu success")
 	fmt.Println("执行参数 ", execIndex);
 	if execIndex == 1 {
-		checkdata2(db, db2, 32)
+		checkdata2(db, db2, tablenum)
 	} else if execIndex == 2  {
-		checkskuid(db, db2, 32)
+		checkskuid(db, db2, tablenum)
+	} else if execIndex == 3 {
+		checkPackInfo(db2, url, url2, token, tablenum);
 	} else {
-		checkBrandname(url, token);
+		checkPack(db, db2, tablenum);
 	}
 
 	fmt.Println(time.Now())

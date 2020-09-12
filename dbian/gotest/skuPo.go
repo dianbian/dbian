@@ -334,21 +334,50 @@ type CFilter struct {
 	Fskuid int32
 }
 
+type CEnFilter struct {
+	Fentityid int32 `json:"Fentityid"`
+	//Fskuid int32 `json:"Fskuid"`
+}
+
+type CNotAndFilter struct {
+	NotCond CFilter `json:"_not"`
+}
+
+type CAndFilter struct {
+	AndCond CEnFilter `json:"_and"`
+}
+
 type EsReq struct {
 	PlatformNum string `json:"platformNum"`
     AppCode string `json:"appCode"`
     Token string `json:"token"`
-    Start int32 `json:"start"`
+    Start int `json:"start"`
     Limit int32 `json:"limit"`
     Fls string `json:"fls"`
     Ids string `json:"ids"`
     Span string `json:"span"`
     SpanDynamic string `json:"spanDynamic"`
     Sort string `json:"-"`
-    Query string `json:"-"`
-    Filter CFilter `json:"_filter"`
+    Query CNotAndFilter `json:"_query"`
+    Filter CAndFilter `json:"_filter"`
 	Group string `json:"-"`
 	Highlight string `json:"-"`
+	ScrollIndex bool `json:"scrollIndex"`
+	WaitTime int `json:"waitTime"`
+	ScrollIndexSort bool `json:"scrollIndexSort"`
+}
+
+type EsReq2 struct {
+    Token string `json:"token"`
+	ScrollId string `json:"scrollId"`
+	WaitTime int `json:"waitTime"`
+}
+
+type PackInfo struct {
+	Fpackrate string
+	Fmeasureunit string 
+	Fbarcode string
+	Fiswholepack int32
 }
 
 type Content struct {
@@ -357,11 +386,14 @@ type Content struct {
 	Fbrandid int32
 	Ferpbrandname string
 	Ferpbrandid string
+	Fskuid int64
+	Fpackinfolist []PackInfo
 }
 
 type Resresult struct {
 	List []Content `json:"list"`
 	RealTotal int32 `json:"realTotal"`
+	ScrollId string `json:"scrollId"`
 }
 
 type ResContent struct {
